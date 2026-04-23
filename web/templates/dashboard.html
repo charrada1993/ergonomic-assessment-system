@@ -1,85 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ErgoVision | Real-time Ergonomic Assessment</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ErgoVision | Dashboard</title>
+  <meta name="description" content="Real-time ergonomic assessment powered by OAK-D depth camera and IMU fusion">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <nav class="navbar glass">
-        <div class="nav-brand">
-            <span class="logo">🧠 ErgoVision</span>
-            <span class="badge">AI Posture Analyst</span>
-        </div>
-        <div class="nav-links">
-            <a href="/" class="active">📊 Dashboard</a>
-            <a href="/camera">📷 Live Feed</a>
-            <a href="/rula">🦾 RULA</a>
-            <a href="/reba">🧍 REBA</a>
-            <a href="/3d">🔮 3D Skeleton</a>
-        </div>
-        <div class="theme-toggle" id="themeToggle">🌙</div>
-    </nav>
 
-    <main class="container">
-        <div class="hero">
-            <h1>Real‑Time Ergonomic Assessment</h1>
-            <p>Powered by OAK‑D Lite + IMU | Edge AI on NVIDIA Orin</p>
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="logo-icon">⬡</span>
+    <span class="logo">ErgoVision</span>
+    <span class="badge-pill">AI · Real-Time</span>
+  </div>
+  <div class="nav-links">
+    <a href="/"      class="active"><span>📊</span><span>Dashboard</span></a>
+    <a href="/camera"><span>📷</span><span>Live Feed</span></a>
+    <a href="/rula"  ><span>🦾</span><span>RULA</span></a>
+    <a href="/reba"  ><span>🧍</span><span>REBA</span></a>
+  </div>
+  <div class="nav-right">
+    <div class="live-dot" id="liveStatus">LIVE</div>
+    <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1 class="page-title">Real‑Time Ergonomic Assessment</h1>
+    <p class="page-sub">OAK‑D Lite · RGB + Depth + IMU Fusion · Edge AI</p>
+  </div>
+
+  <!-- ── Metric cards ── -->
+  <div class="metrics-row">
+
+    <div class="card metric-card" style="--accent:var(--cyan)">
+      <div class="metric-label"><span class="mi">🦾</span> RULA Score</div>
+      <div class="metric-value" id="rulaVal">--</div>
+      <div><span class="risk-chip" id="rulaChip">Waiting</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="rulaBar"></div></div>
+      <div class="metric-sub">Max 7 · Upper limbs + trunk</div>
+    </div>
+
+    <div class="card metric-card" style="--accent:var(--purple)">
+      <div class="metric-label"><span class="mi">🧍</span> REBA Score</div>
+      <div class="metric-value" id="rebaVal">--</div>
+      <div><span class="risk-chip" id="rebaChip">Waiting</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="rebaBar" style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></div></div>
+      <div class="metric-sub">Max 15 · Whole body</div>
+    </div>
+
+    <div class="card metric-card" style="--accent:var(--green)">
+      <div class="metric-label"><span class="mi">📐</span> Neck Angle</div>
+      <div class="metric-value" id="neckVal">--<small style="font-size:1.2rem">°</small></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="neckBar" style="background:var(--col-neck);box-shadow:0 0 8px var(--col-neck)"></div></div>
+      <div class="metric-sub">Flexion / Extension</div>
+    </div>
+
+    <div class="card metric-card" style="--accent:var(--yellow)">
+      <div class="metric-label"><span class="mi">🏃</span> Trunk Angle</div>
+      <div class="metric-value" id="trunkVal">--<small style="font-size:1.2rem">°</small></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="trunkBar" style="background:var(--col-trunk);box-shadow:0 0 8px var(--col-trunk)"></div></div>
+      <div class="metric-sub">Forward lean</div>
+    </div>
+
+    <div class="card metric-card" style="--accent:var(--orange)">
+      <div class="metric-label"><span class="mi">💪</span> Upper Arm</div>
+      <div class="metric-value" id="armVal">--<small style="font-size:1.2rem">°</small></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="armBar" style="background:var(--col-arm-l);box-shadow:0 0 8px var(--col-arm-l)"></div></div>
+      <div class="metric-sub">Left shoulder elevation</div>
+    </div>
+
+  </div>
+
+  <!-- ── Main two-column layout ── -->
+  <div class="dash-grid">
+
+    <!-- LEFT: charts + anomalies -->
+    <div class="col-main">
+
+      <!-- Joint angles line chart -->
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon">📈</span> Joint Angles — Live Trend</div>
+          <div class="tab-group" id="chartTabs">
+            <button class="tab-btn active" data-chart="angles">Angles</button>
+            <button class="tab-btn" data-chart="scores">RULA/REBA</button>
+            <button class="tab-btn" data-chart="imu">IMU</button>
+          </div>
         </div>
 
-        <div class="score-grid">
-            <div class="card score-card rula-card">
-                <div class="card-header">
-                    <span class="icon">🦾</span>
-                    <h3>RULA Score</h3>
-                </div>
-                <div class="score-value" id="rula">--</div>
-                <div class="risk-tag" id="rulaRisk">--</div>
-                <div class="progress-bar"><div class="progress-fill" id="rulaProgress" style="width:0%"></div></div>
-            </div>
-            <div class="card score-card reba-card">
-                <div class="card-header">
-                    <span class="icon">🧍</span>
-                    <h3>REBA Score</h3>
-                </div>
-                <div class="score-value" id="reba">--</div>
-                <div class="risk-tag" id="rebaRisk">--</div>
-                <div class="progress-bar"><div class="progress-fill" id="rebaProgress" style="width:0%"></div></div>
-            </div>
-            <div class="card alert-card">
-                <div class="card-header">
-                    <span class="icon">⚠️</span>
-                    <h3>Risk Level</h3>
-                </div>
-                <div class="risk-level" id="riskLevel">--</div>
-                <div class="anomaly-list" id="anomalies"></div>
-            </div>
+        <!-- Legend -->
+        <div class="legend-row" id="angleChartLegend">
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-neck)"></span>Neck</label>
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-trunk)"></span>Trunk</label>
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-arm-l)"></span>Upper Arm L</label>
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-arm-r)"></span>Upper Arm R</label>
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-forearm)"></span>Forearm</label>
+          <label class="legend-item"><span class="legend-dot" style="background:var(--col-wrist)"></span>Wrist</label>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="angleChart" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- Score trend hidden canvas -->
+      <div class="card chart-panel" id="scoreTrendPanel" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon">📊</span> RULA / REBA History</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="scoreChart" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- IMU chart hidden canvas -->
+      <div class="card chart-panel" id="imuTrendPanel" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon">📡</span> IMU Sensor Data</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="imuChart" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- Anomaly feed -->
+      <div class="card anomaly-panel">
+        <div class="panel-title"><span class="pt-icon">⚡</span> Event Feed</div>
+        <div class="anomaly-list" id="anomalyFeed">
+          <div class="anomaly-item anomaly-ok"><span class="anomaly-icon">✅</span> System initialising — waiting for data…</div>
+        </div>
+      </div>
+
+    </div><!-- /col-main -->
+
+    <!-- RIGHT: body diagram + IMU -->
+    <div class="col-side">
+
+      <!-- Body diagram -->
+      <div class="card body-panel">
+        <div class="panel-title" style="margin-bottom:0.75rem"><span class="pt-icon">🏃</span> Body Risk Map</div>
+
+        <div class="body-diagram-wrap">
+          <!-- SVG stick-figure -->
+          <svg class="body-svg" viewBox="0 0 100 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Head -->
+            <circle cx="50" cy="18" r="12" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+            <!-- Neck -->
+            <line x1="50" y1="30" x2="50" y2="42" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Shoulders -->
+            <line x1="22" y1="52" x2="78" y2="52" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Spine -->
+            <line x1="50" y1="52" x2="50" y2="110" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Left arm -->
+            <line x1="22" y1="52" x2="10" y2="85" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <line x1="10" y1="85" x2="5"  y2="115" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Right arm -->
+            <line x1="78" y1="52" x2="90" y2="85" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <line x1="90" y1="85" x2="95" y2="115" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Hips -->
+            <line x1="35" y1="110" x2="65" y2="110" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Left leg -->
+            <line x1="35" y1="110" x2="30" y2="170" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <line x1="30" y1="170" x2="28" y2="220" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <!-- Right leg -->
+            <line x1="65" y1="110" x2="70" y2="170" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <line x1="70" y1="170" x2="72" y2="220" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+          </svg>
+
+          <!-- Joint dots (positioned absolutely over SVG using percentage) -->
+          <!-- Neck -->
+          <div class="joint-dot ok" id="jd-neck"     data-label="Neck"     style="top:16%;left:50%"></div>
+          <!-- Trunk (mid-spine) -->
+          <div class="joint-dot ok" id="jd-trunk"    data-label="Trunk"    style="top:37%;left:50%"></div>
+          <!-- Left shoulder -->
+          <div class="joint-dot ok" id="jd-shl"      data-label="Shoulder L" style="top:22%;left:24%"></div>
+          <!-- Right shoulder -->
+          <div class="joint-dot ok" id="jd-shr"      data-label="Shoulder R" style="top:22%;left:76%"></div>
+          <!-- Left elbow -->
+          <div class="joint-dot ok" id="jd-ell"      data-label="Elbow L"  style="top:37%;left:12%"></div>
+          <!-- Right elbow -->
+          <div class="joint-dot ok" id="jd-elr"      data-label="Elbow R"  style="top:37%;left:88%"></div>
+          <!-- Left wrist -->
+          <div class="joint-dot ok" id="jd-wrl"      data-label="Wrist L"  style="top:50%;left:7%"></div>
+          <!-- Right wrist -->
+          <div class="joint-dot ok" id="jd-wrr"      data-label="Wrist R"  style="top:50%;left:93%"></div>
+          <!-- Hips -->
+          <div class="joint-dot ok" id="jd-hip"      data-label="Hip"      style="top:48%;left:50%"></div>
+          <!-- Left knee -->
+          <div class="joint-dot ok" id="jd-knl"      data-label="Knee L"   style="top:72%;left:32%"></div>
+          <!-- Right knee -->
+          <div class="joint-dot ok" id="jd-knr"      data-label="Knee R"   style="top:72%;left:68%"></div>
         </div>
 
-        <div class="chart-panel glass">
-            <div class="panel-header">
-                <h3>📈 Joint Angles Trend</h3>
-                <div class="legend">
-                    <span><span class="color-dot neck-dot"></span> Neck</span>
-                    <span><span class="color-dot trunk-dot"></span> Trunk</span>
-                    <span><span class="color-dot arm-dot"></span> Upper Arm (L)</span>
-                </div>
-            </div>
-            <canvas id="angleChart" width="800" height="400"></canvas>
+        <!-- Per-joint angle readouts -->
+        <div class="joint-readouts">
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-neck)">● Neck</div>
+            <div class="jr-value" id="jr-neck">--<span class="jr-unit">°</span></div>
+          </div>
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-trunk)">● Trunk</div>
+            <div class="jr-value" id="jr-trunk">--<span class="jr-unit">°</span></div>
+          </div>
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-arm-l)">● Arm L</div>
+            <div class="jr-value" id="jr-arml">--<span class="jr-unit">°</span></div>
+          </div>
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-arm-r)">● Arm R</div>
+            <div class="jr-value" id="jr-armr">--<span class="jr-unit">°</span></div>
+          </div>
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-forearm)">● Forearm</div>
+            <div class="jr-value" id="jr-forearm">--<span class="jr-unit">°</span></div>
+          </div>
+          <div class="joint-readout">
+            <div class="jr-label" style="color:var(--col-wrist)">● Wrist</div>
+            <div class="jr-value" id="jr-wrist">--<span class="jr-unit">°</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMU panel -->
+      <div class="card imu-panel">
+        <div class="panel-title"><span class="pt-icon">📡</span> IMU — BNO086</div>
+
+        <p style="font-size:0.72rem;color:var(--text-muted);margin:0.5rem 0 0.75rem">Accelerometer (m/s²)</p>
+        <div class="imu-grid">
+          <div class="imu-axis x"><div class="imu-axis-label">X</div><div class="imu-axis-val" id="imu-ax">0.00</div></div>
+          <div class="imu-axis y"><div class="imu-axis-label">Y</div><div class="imu-axis-val" id="imu-ay">0.00</div></div>
+          <div class="imu-axis z"><div class="imu-axis-label">Z</div><div class="imu-axis-val" id="imu-az">0.00</div></div>
         </div>
 
-        <div class="status-row">
-            <div class="info-chip">🎥 Camera: <span id="camStatus">Initializing...</span></div>
-            <div class="info-chip">📡 IMU: <span id="imuStatus">Waiting...</span></div>
-            <div class="info-chip">⚡ System mode: <span id="mode">--</span></div>
+        <p style="font-size:0.72rem;color:var(--text-muted);margin:0.9rem 0 0.75rem">Gyroscope (rad/s)</p>
+        <div class="imu-grid">
+          <div class="imu-axis x"><div class="imu-axis-label">X</div><div class="imu-axis-val" id="imu-gx">0.00</div></div>
+          <div class="imu-axis y"><div class="imu-axis-label">Y</div><div class="imu-axis-val" id="imu-gy">0.00</div></div>
+          <div class="imu-axis z"><div class="imu-axis-label">Z</div><div class="imu-axis-val" id="imu-gz">0.00</div></div>
         </div>
-    </main>
 
-    <script src="/static/js/dashboard.js"></script>
+        <p style="font-size:0.72rem;color:var(--text-muted);margin:0.9rem 0 0.75rem">Orientation (Euler °)</p>
+        <div class="euler-row">
+          <div class="euler-chip"><div class="euler-name">Roll</div><div class="euler-val" id="imu-roll">0.0</div></div>
+          <div class="euler-chip"><div class="euler-name">Pitch</div><div class="euler-val" id="imu-pitch">0.0</div></div>
+          <div class="euler-chip"><div class="euler-name">Yaw</div><div class="euler-val" id="imu-yaw">0.0</div></div>
+        </div>
+      </div>
+
+    </div><!-- /col-side -->
+  </div><!-- /dash-grid -->
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-chip"><span class="dot" id="camDot"></span>Camera: <strong id="camStatus">Connecting…</strong></div>
+    <div class="status-chip"><span class="dot" id="imuDot"></span>IMU: <strong id="imuStatus">Connecting…</strong></div>
+    <div class="status-chip"><span class="dot"></span>Mode: <strong id="sysMode">--</strong></div>
+    <div class="status-chip" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted)">
+      FPS <strong id="fpsStat">--</strong> &nbsp;|&nbsp; Frames <strong id="frameStat">0</strong>
+    </div>
+  </div>
+
+</main>
+
+<script src="/static/js/dashboard.js"></script>
 </body>
 </html>

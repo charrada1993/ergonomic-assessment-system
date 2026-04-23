@@ -1,76 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ErgoVision | Camera Feed</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ErgoVision | Live Camera Feed</title>
+  <meta name="description" content="OAK-D live RGB and depth camera streams with IMU telemetry">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 </head>
 <body>
-    <nav class="navbar glass">
-        <div class="nav-brand">
-            <span class="logo">🧠 ErgoVision</span>
-            <span class="badge">AI Posture Analyst</span>
-        </div>
-        <div class="nav-links">
-            <a href="/">📊 Dashboard</a>
-            <a href="/camera" class="active">📷 Live Feed</a>
-            <a href="/rula">🦾 RULA</a>
-            <a href="/reba">🧍 REBA</a>
-            <a href="/3d">🔮 3D Skeleton</a>
-        </div>
-        <div class="theme-toggle" id="themeToggle">🌙</div>
-    </nav>
 
-    <main class="container camera-container">
-        <div class="hero small">
-            <h1>📷 Live Camera Stream</h1>
-            <p>OAK‑D Lite | 640x480 @ 30 FPS</p>
-        </div>
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="logo-icon">⬡</span>
+    <span class="logo">ErgoVision</span>
+    <span class="badge-pill">Live Feed</span>
+  </div>
+  <div class="nav-links">
+    <a href="/"><span>📊</span><span>Dashboard</span></a>
+    <a href="/camera" class="active"><span>📷</span><span>Live Feed</span></a>
+    <a href="/rula"><span>🦾</span><span>RULA</span></a>
+    <a href="/reba"><span>🧍</span><span>REBA</span></a>
+  </div>
+  <div class="nav-right">
+    <div class="live-dot" id="liveStatus">LIVE</div>
+    <button class="theme-btn" id="themeBtn">🌙</button>
+  </div>
+</nav>
 
-        <div class="camera-panel glass">
-            <div class="video-wrapper">
-                <img id="videoFeed" src="/video_feed" alt="Live Camera Feed" class="video-feed">
-                <div class="overlay-text" id="overlayText">Stand in front of camera</div>
+<main class="container">
+
+  <div class="page-header">
+    <h1 class="page-title">📷 Live Camera Stream</h1>
+    <p class="page-sub">OAK-D Lite · RGB 1280×720 @ 30 FPS · Depth aligned · BNO086 IMU</p>
+  </div>
+
+  <!-- ── Camera stat strip ── -->
+  <div class="metrics-row" style="margin-bottom:1.5rem">
+    <div class="card metric-card" style="--accent:var(--green)">
+      <div class="metric-label"><span class="mi">⚡</span> FPS</div>
+      <div class="metric-value" id="fps">--</div>
+      <div class="metric-sub">Frames per second</div>
+    </div>
+    <div class="card metric-card" style="--accent:var(--cyan)">
+      <div class="metric-label"><span class="mi">📸</span> Resolution</div>
+      <div class="metric-value" style="font-size:1.6rem">1280<small style="font-size:1rem;color:var(--text-muted)">×720</small></div>
+      <div class="metric-sub">RGB stream</div>
+    </div>
+    <div class="card metric-card" style="--accent:var(--purple)">
+      <div class="metric-label"><span class="mi">🔌</span> Connection</div>
+      <div class="metric-value" style="font-size:1.5rem" id="connType">USB3</div>
+      <div class="metric-sub" id="connStatus">Active</div>
+    </div>
+    <div class="card metric-card" style="--accent:var(--yellow)">
+      <div class="metric-label"><span class="mi">📡</span> IMU Chip</div>
+      <div class="metric-value" style="font-size:1.4rem" id="imuChip">BNO086</div>
+      <div class="metric-sub">Rotation vector @ 400Hz</div>
+    </div>
+    <div class="card metric-card" style="--accent:var(--orange)">
+      <div class="metric-label"><span class="mi">📦</span> Total Frames</div>
+      <div class="metric-value font-mono" id="totalFrames">0</div>
+      <div class="metric-sub">Since session start</div>
+    </div>
+  </div>
+
+  <!-- ── Main camera layout ── -->
+  <div class="cam-grid">
+
+    <!-- RGB video feed -->
+    <div class="card video-panel">
+      <div class="video-header">
+        <div class="panel-title"><span class="pt-icon">🎥</span> RGB — Pose Overlay</div>
+        <div style="display:flex;gap:0.6rem;align-items:center">
+          <span class="vbadge"><span style="color:var(--green)">●</span> RGB</span>
+          <span class="vbadge font-mono" id="fpsBadge">30 FPS</span>
+        </div>
+      </div>
+      <div class="video-wrap">
+        <img id="videoFeed"
+             src="/video_feed"
+             alt="Live RGB Camera Feed"
+             class="video-feed"
+             onload="onFrameLoad()"
+             onerror="onFeedError()">
+        <div class="video-overlay"></div>
+        <div class="video-badge">
+          <span class="vbadge"><span style="color:var(--green)">●</span> OAK-D Lite</span>
+          <span class="vbadge font-mono" id="resLabel">1280×720</span>
+          <span class="vbadge" id="depthBadge">⬡ Depth Active</span>
+        </div>
+      </div>
+
+      <!-- IMU telemetry row below video -->
+      <div style="padding:1rem 1.25rem;border-top:1px solid var(--border)">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.75rem">
+          IMU Telemetry — Live
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem">
+          <!-- Accel -->
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
+            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">ACCEL (m/s²)</div>
+            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
+              <span style="color:var(--red)">X: <strong id="cax">0.00</strong></span>
+              <span style="color:var(--green)">Y: <strong id="cay">0.00</strong></span>
+              <span style="color:var(--cyan)">Z: <strong id="caz">0.00</strong></span>
             </div>
-            <div class="camera-info">
-                <div class="info-card">
-                    <span>📸 Device</span>
-                    <strong>OAK‑D Lite</strong>
-                </div>
-                <div class="info-card">
-                    <span>🔌 Connection</span>
-                    <strong>USB 2.0</strong>
-                </div>
-                <div class="info-card">
-                    <span>🔄 FPS</span>
-                    <strong id="fps">--</strong>
-                </div>
-                <div class="info-card">
-                    <span>🧠 IMU</span>
-                    <strong id="imuType">BMI270</strong>
-                </div>
+          </div>
+          <!-- Gyro -->
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
+            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">GYRO (rad/s)</div>
+            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
+              <span style="color:var(--red)">X: <strong id="cgx">0.00</strong></span>
+              <span style="color:var(--green)">Y: <strong id="cgy">0.00</strong></span>
+              <span style="color:var(--cyan)">Z: <strong id="cgz">0.00</strong></span>
             </div>
-            <button class="refresh-btn" onclick="refreshCameraInfo()">⟳ Refresh Camera Info</button>
+          </div>
+          <!-- Euler -->
+          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
+            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">ORIENTATION (°)</div>
+            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
+              <span style="color:var(--purple)">R: <strong id="croll">0.0</strong></span>
+              <span style="color:var(--yellow)">P: <strong id="cpitch">0.0</strong></span>
+              <span style="color:var(--orange)">Y: <strong id="cyaw">0.0</strong></span>
+            </div>
+          </div>
         </div>
-    </main>
+      </div>
+    </div>
 
-    <script>
-        async function refreshCameraInfo() {
-            const res = await fetch('/api/config');
-            const data = await res.json();
-            document.getElementById('fps').innerText = '30';
-            // Update IMU info if needed
-        }
-        refreshCameraInfo();
-        // Simulate FPS counter (optional)
-        let frameCount = 0;
-        setInterval(() => {
-            frameCount++;
-            document.getElementById('fps').innerText = frameCount;
-            frameCount = 0;
-        }, 1000);
-    </script>
+    <!-- Right sidebar: depth preview + pose data -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+      <!-- Depth colormap preview -->
+      <div class="card depth-panel">
+        <div class="video-header" style="border-bottom:1px solid var(--border)">
+          <div class="panel-title"><span class="pt-icon">🌡️</span> Depth Map</div>
+          <span class="vbadge"><span style="color:var(--cyan)">●</span> Aligned</span>
+        </div>
+        <div class="video-wrap">
+          <img id="depthFeed"
+               src="/depth_feed"
+               alt="Depth colormap"
+               class="depth-feed"
+               onerror="this.style.display='none';document.getElementById('depthPlaceholder').style.display='flex'">
+          <div id="depthPlaceholder"
+               style="display:none;min-height:180px;align-items:center;justify-content:center;
+                      color:var(--text-muted);font-size:0.8rem;background:var(--surface2)">
+            Depth stream unavailable
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time pose angles -->
+      <div class="card cam-stats">
+        <div class="panel-title"><span class="pt-icon">📐</span> Live Joint Angles</div>
+        <div class="cam-stat-row" style="grid-template-columns:1fr 1fr;margin-top:0.85rem">
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-neck)">Neck</div>
+            <div class="cam-stat-val" id="live-neck">--°</div>
+          </div>
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-trunk)">Trunk</div>
+            <div class="cam-stat-val" id="live-trunk">--°</div>
+          </div>
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-arm-l)">Arm L</div>
+            <div class="cam-stat-val" id="live-arml">--°</div>
+          </div>
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-arm-r)">Arm R</div>
+            <div class="cam-stat-val" id="live-armr">--°</div>
+          </div>
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-forearm)">Forearm</div>
+            <div class="cam-stat-val" id="live-forearm">--°</div>
+          </div>
+          <div class="cam-stat">
+            <div class="cam-stat-lbl" style="color:var(--col-wrist)">Wrist</div>
+            <div class="cam-stat-val" id="live-wrist">--°</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULA/REBA quick scores -->
+      <div class="card cam-stats">
+        <div class="panel-title"><span class="pt-icon">📊</span> Quick Scores</div>
+        <div class="cam-stat-row" style="margin-top:0.85rem">
+          <div class="cam-stat" style="border-top:2px solid var(--cyan)">
+            <div class="cam-stat-lbl">RULA</div>
+            <div class="cam-stat-val" id="qs-rula">--</div>
+          </div>
+          <div class="cam-stat" style="border-top:2px solid var(--purple)">
+            <div class="cam-stat-lbl">REBA</div>
+            <div class="cam-stat-val" style="color:var(--purple)" id="qs-reba">--</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:0.85rem">
+          <span class="risk-chip" id="qs-risk">Waiting…</span>
+        </div>
+      </div>
+
+    </div><!-- /right sidebar -->
+  </div><!-- /cam-grid -->
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-chip"><span class="dot" id="camDot"></span>Camera: <strong id="camStatus">Connecting…</strong></div>
+    <div class="status-chip"><span class="dot"></span>Depth: <strong>Active (aligned)</strong></div>
+    <div class="status-chip"><span class="dot"></span>IMU: <strong id="imuStatus">BNO086</strong></div>
+    <div class="status-chip" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted)">
+      Session frames: <strong id="framesStat">0</strong>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const socket = io();
+  let frameCount = 0, totalFrames = 0, lastFpsTs = Date.now();
+
+  // FPS counter via image load events
+  function onFrameLoad() {
+    frameCount++;
+    totalFrames++;
+    document.getElementById('totalFrames').textContent = totalFrames;
+    const now = Date.now();
+    if (now - lastFpsTs >= 1000) {
+      const fps = Math.round(frameCount * 1000 / (now - lastFpsTs));
+      document.getElementById('fps').textContent      = fps;
+      document.getElementById('fpsBadge').textContent = fps + ' FPS';
+      frameCount  = 0;
+      lastFpsTs   = now;
+    }
+  }
+
+  function onFeedError() {
+    document.getElementById('camStatus').textContent = 'Disconnected';
+    document.getElementById('camDot').classList.add('warn');
+    document.getElementById('fps').textContent = '0';
+  }
+
+  function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+
+  function classRisk(r) {
+    r = (r || '').toLowerCase();
+    if (r.includes('high')   || r.includes('critical')) return 'high';
+    if (r.includes('medium') || r.includes('moyen'))    return 'medium';
+    return 'low';
+  }
+
+  socket.on('pose_update', (data) => {
+    const a = data.angles || {};
+    setText('framesStat', ++totalFrames);
+
+    // Joint angles
+    setText('live-neck',    (+(a.neck||0)).toFixed(1) + '°');
+    setText('live-trunk',   (+(a.trunk||0)).toFixed(1) + '°');
+    setText('live-arml',    (+(a.upper_arm_left||0)).toFixed(1) + '°');
+    setText('live-armr',    (+(a.upper_arm_right||0)).toFixed(1) + '°');
+    setText('live-forearm', (+(a.lower_arm_left || a.forearm || 0)).toFixed(1) + '°');
+    setText('live-wrist',   (+(a.wrist_left || a.wrist || 0)).toFixed(1) + '°');
+
+    // Quick scores
+    setText('qs-rula', data.rula ?? '--');
+    setText('qs-reba', data.reba ?? '--');
+    const rc = classRisk(data.risk_level);
+    document.getElementById('qs-risk').textContent = data.risk_level || 'Low';
+    document.getElementById('qs-risk').className   = 'risk-chip ' + rc;
+
+    // IMU
+    if (data.imu) {
+      const [ax,ay,az] = data.imu.accel || [0,0,0];
+      const [gx,gy,gz] = data.imu.gyro  || [0,0,0];
+      const [roll,pitch,yaw] = data.imu.euler || [0,0,0];
+      setText('cax', ax.toFixed(2)); setText('cay', ay.toFixed(2)); setText('caz', az.toFixed(2));
+      setText('cgx', gx.toFixed(2)); setText('cgy', gy.toFixed(2)); setText('cgz', gz.toFixed(2));
+      setText('croll', roll.toFixed(1)); setText('cpitch', pitch.toFixed(1)); setText('cyaw', yaw.toFixed(1));
+    }
+  });
+
+  socket.on('config', (cfg) => {
+    setText('camStatus', 'Active');
+    setText('connType',  cfg.usb3 ? 'USB3' : 'USB2');
+  });
+
+  socket.on('connect',    () => setText('camStatus', 'Connected'));
+  socket.on('disconnect', () => { setText('camStatus', 'Disconnected'); document.getElementById('camDot').classList.add('warn'); });
+
+  // Theme
+  const btn = document.getElementById('themeBtn');
+  function applyTheme(d){ document.body.classList.toggle('dark',d); btn.textContent=d?'☀️':'🌙'; localStorage.setItem('ergo-theme',d?'dark':'light'); }
+  btn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('dark')));
+  applyTheme(localStorage.getItem('ergo-theme')==='dark');
+</script>
 </body>
 </html>
