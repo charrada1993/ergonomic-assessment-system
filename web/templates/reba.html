@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ErgoVision | RULA Analysis</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+</head>
+<body>
+    <nav class="navbar glass">...</nav>
+    <main class="container">
+        <div class="hero small">
+            <h1>🦾 RULA Score Details</h1>
+            <p>Rapid Upper Limb Assessment</p>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-card">
+                <h3>Group A (Upper Limb)</h3>
+                <ul id="groupA-list">
+                    <li>Upper arm: --</li>
+                    <li>Lower arm: --</li>
+                    <li>Wrist: --</li>
+                    <li>Load/Force: --</li>
+                </ul>
+            </div>
+            <div class="detail-card">
+                <h3>Group B (Neck, Trunk, Legs)</h3>
+                <ul id="groupB-list">
+                    <li>Neck: --</li>
+                    <li>Trunk: --</li>
+                    <li>Legs: --</li>
+                </ul>
+            </div>
+            <div class="detail-card final-score">
+                <h3>Final RULA Score</h3>
+                <div class="big-score" id="rulaScore">--</div>
+                <div class="risk-badge" id="rulaRiskBadge"></div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const socket = io();
+        socket.on('pose_update', (data) => {
+            document.getElementById('rulaScore').innerText = data.rula;
+            const risk = data.risk_level;
+            const badge = document.getElementById('rulaRiskBadge');
+            badge.innerText = risk;
+            badge.className = `risk-badge ${risk.includes('Élevé') ? 'high' : risk.includes('Moyen') ? 'medium' : 'low'}`;
+            if (data.rula_details) {
+                // update lists if backend sends details
+            }
+        });
+    </script>
+</body>
+</html>

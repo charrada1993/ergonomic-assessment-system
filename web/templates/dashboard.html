@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ErgoVision | Real-time Ergonomic Assessment</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="nav-brand">
+            <span class="logo">🧠 ErgoVision</span>
+            <span class="badge">AI Posture Analyst</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="active">📊 Dashboard</a>
+            <a href="/camera">📷 Live Feed</a>
+            <a href="/rula">🦾 RULA</a>
+            <a href="/reba">🧍 REBA</a>
+            <a href="/3d">🔮 3D Skeleton</a>
+        </div>
+        <div class="theme-toggle" id="themeToggle">🌙</div>
+    </nav>
+
+    <main class="container">
+        <div class="hero">
+            <h1>Real‑Time Ergonomic Assessment</h1>
+            <p>Powered by OAK‑D Lite + IMU | Edge AI on NVIDIA Orin</p>
+        </div>
+
+        <div class="score-grid">
+            <div class="card score-card rula-card">
+                <div class="card-header">
+                    <span class="icon">🦾</span>
+                    <h3>RULA Score</h3>
+                </div>
+                <div class="score-value" id="rula">--</div>
+                <div class="risk-tag" id="rulaRisk">--</div>
+                <div class="progress-bar"><div class="progress-fill" id="rulaProgress" style="width:0%"></div></div>
+            </div>
+            <div class="card score-card reba-card">
+                <div class="card-header">
+                    <span class="icon">🧍</span>
+                    <h3>REBA Score</h3>
+                </div>
+                <div class="score-value" id="reba">--</div>
+                <div class="risk-tag" id="rebaRisk">--</div>
+                <div class="progress-bar"><div class="progress-fill" id="rebaProgress" style="width:0%"></div></div>
+            </div>
+            <div class="card alert-card">
+                <div class="card-header">
+                    <span class="icon">⚠️</span>
+                    <h3>Risk Level</h3>
+                </div>
+                <div class="risk-level" id="riskLevel">--</div>
+                <div class="anomaly-list" id="anomalies"></div>
+            </div>
+        </div>
+
+        <div class="chart-panel glass">
+            <div class="panel-header">
+                <h3>📈 Joint Angles Trend</h3>
+                <div class="legend">
+                    <span><span class="color-dot neck-dot"></span> Neck</span>
+                    <span><span class="color-dot trunk-dot"></span> Trunk</span>
+                    <span><span class="color-dot arm-dot"></span> Upper Arm (L)</span>
+                </div>
+            </div>
+            <canvas id="angleChart" width="800" height="400"></canvas>
+        </div>
+
+        <div class="status-row">
+            <div class="info-chip">🎥 Camera: <span id="camStatus">Initializing...</span></div>
+            <div class="info-chip">📡 IMU: <span id="imuStatus">Waiting...</span></div>
+            <div class="info-chip">⚡ System mode: <span id="mode">--</span></div>
+        </div>
+    </main>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

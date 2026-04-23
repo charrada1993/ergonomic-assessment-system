@@ -1,0 +1,10 @@
+depthai
+mediapipe
+flask
+flask-socketio
+pandas
+numpy
+opencv-python
+reportlab
+matplotlib
+simple-websocket

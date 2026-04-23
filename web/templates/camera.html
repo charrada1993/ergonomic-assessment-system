@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErgoVision | Camera Feed</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar glass">
+        <div class="nav-brand">
+            <span class="logo">🧠 ErgoVision</span>
+            <span class="badge">AI Posture Analyst</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">📊 Dashboard</a>
+            <a href="/camera" class="active">📷 Live Feed</a>
+            <a href="/rula">🦾 RULA</a>
+            <a href="/reba">🧍 REBA</a>
+            <a href="/3d">🔮 3D Skeleton</a>
+        </div>
+        <div class="theme-toggle" id="themeToggle">🌙</div>
+    </nav>
+
+    <main class="container camera-container">
+        <div class="hero small">
+            <h1>📷 Live Camera Stream</h1>
+            <p>OAK‑D Lite | 640x480 @ 30 FPS</p>
+        </div>
+
+        <div class="camera-panel glass">
+            <div class="video-wrapper">
+                <img id="videoFeed" src="/video_feed" alt="Live Camera Feed" class="video-feed">
+                <div class="overlay-text" id="overlayText">Stand in front of camera</div>
+            </div>
+            <div class="camera-info">
+                <div class="info-card">
+                    <span>📸 Device</span>
+                    <strong>OAK‑D Lite</strong>
+                </div>
+                <div class="info-card">
+                    <span>🔌 Connection</span>
+                    <strong>USB 2.0</strong>
+                </div>
+                <div class="info-card">
+                    <span>🔄 FPS</span>
+                    <strong id="fps">--</strong>
+                </div>
+                <div class="info-card">
+                    <span>🧠 IMU</span>
+                    <strong id="imuType">BMI270</strong>
+                </div>
+            </div>
+            <button class="refresh-btn" onclick="refreshCameraInfo()">⟳ Refresh Camera Info</button>
+        </div>
+    </main>
+
+    <script>
+        async function refreshCameraInfo() {
+            const res = await fetch('/api/config');
+            const data = await res.json();
+            document.getElementById('fps').innerText = '30';
+            // Update IMU info if needed
+        }
+        refreshCameraInfo();
+        // Simulate FPS counter (optional)
+        let frameCount = 0;
+        setInterval(() => {
+            frameCount++;
+            document.getElementById('fps').innerText = frameCount;
+            frameCount = 0;
+        }, 1000);
+    </script>
+</body>
+</html>

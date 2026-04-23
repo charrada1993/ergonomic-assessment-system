@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+oak_env/
+
+# Session and report files
+sessions/
+reports/
+logs/
+*.csv
+*.pdf
+*.jpg
+*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# DepthAI / OAK-D
+*.blob
+*.cmake
+*.o
+*.a
+
+# Flask / web static temp
+web/static/temp_plot.png
+
+# OS
+.DS_Store
+Thumbs.db
