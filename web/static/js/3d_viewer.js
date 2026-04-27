@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
 // ─── Scene Setup ──────────────────────────────────────────────
 const scene = new THREE.Scene();
@@ -7,7 +8,7 @@ scene.background = null;
 
 const container = document.getElementById('canvas-container') || document.body;
 const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-camera.position.set(0, 1.5, 3.5);
+camera.position.set(0, 1.5, 4.5);
 camera.lookAt(0, 1, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -21,26 +22,23 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.minDistance = 1.5;
-controls.maxDistance = 8;
+controls.maxDistance = 10;
 controls.target.set(0, 1, 0);
 
 window.addEventListener('resize', () => {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    const w = container.clientWidth, h = container.clientHeight;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
 });
 
 // ─── Lighting ─────────────────────────────────────────────────
-const ambientLight = new THREE.AmbientLight(0x404060, 0.8);
-scene.add(ambientLight);
+scene.add(new THREE.AmbientLight(0x606080, 1.0));
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 dirLight.position.set(2, 5, 3);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.set(2048, 2048);
 dirLight.shadow.bias = -0.0005;
 scene.add(dirLight);
 
@@ -49,122 +47,124 @@ fillLight.position.set(-2, 1, -2);
 scene.add(fillLight);
 
 // ─── Ground Plane ─────────────────────────────────────────────
-const floorGeometry = new THREE.PlaneGeometry(8, 8);
-const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0a0f25,
-    roughness: 0.1,
-    metalness: 0.6,
-    transparent: true,
-    opacity: 0.8
-});
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 8),
+    new THREE.MeshStandardMaterial({ color: 0x0a0f25, roughness: 0.1, metalness: 0.6, transparent: true, opacity: 0.8 })
+);
 floor.rotation.x = -Math.PI / 2;
-floor.position.y = -0.1;
+floor.position.y = -0.05;
 floor.receiveShadow = true;
 scene.add(floor);
 
 const gridHelper = new THREE.GridHelper(8, 40, 0x1a2040, 0x0d1530);
-gridHelper.position.y = -0.09;
+gridHelper.position.y = -0.04;
 scene.add(gridHelper);
 
-// ─── Anatomical Procedural Skeleton ───────────────────────────
-const connections = [
-    [11,13], [13,15], // Left Arm
-    [12,14], [14,16], // Right Arm
-    [11,12], [11,23], [12,24], [23,24], // Torso
-    [23,25], [25,27], // Left Leg
-    [24,26], [26,28], // Right Leg
-    [0,11], [0,12], // Neck to shoulders
-];
+// ─── GLTF Model ───────────────────────────────────────────────
+let model = null;
+const bones = {};
+const targetPositions = Array.from({ length: 33 }, () => new THREE.Vector3());
+let lastLandmarks = null;
 
-const joints = [];
-const targetSpheres = [];
-const bones = [];
+// ─── Bone Rotation Helper ─────────────────────────────────────
+const _q = new THREE.Quaternion();
+const _up = new THREE.Vector3(0, 1, 0);
+const _v1 = new THREE.Vector3();
 
-// Shared anatomical bone material (bone white)
-const boneMat = new THREE.MeshStandardMaterial({ 
-    color: 0xe0e5ec, 
-    roughness: 0.7, 
-    metalness: 0.1 
-});
-// Shared joint material (slightly darker/bluish cartilage)
-const jointMat = new THREE.MeshStandardMaterial({ 
-    color: 0x8ba4b5, 
-    roughness: 0.4, 
-    metalness: 0.2 
-});
-
-// Tapered bone geometry (thicker at top, thinner at bottom)
-const boneGeometry = new THREE.CylinderGeometry(0.02, 0.012, 1, 12);
-boneGeometry.translate(0, 0.5, 0);
-boneGeometry.rotateX(Math.PI / 2);
-
-function createAnatomicalSkeleton() {
-    for (let i = 0; i < 33; i++) {
-        let geo;
-        if (i === 0) {
-            // Skull: an ellipsoid
-            geo = new THREE.SphereGeometry(0.08, 24, 24);
-            geo.scale(1, 1.3, 1.1); // Make it skull shaped
-        } else {
-            // Normal joints
-            geo = new THREE.SphereGeometry(0.025, 16, 16);
-        }
-
-        const mesh = new THREE.Mesh(geo, i === 0 ? boneMat : jointMat);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        mesh.visible = false;
-        scene.add(mesh);
-        joints.push(mesh);
-        targetSpheres.push(new THREE.Vector3());
-    }
-
-    for (let i = 0; i < connections.length; i++) {
-        // Use a thicker geometry for the torso to simulate ribcage mass
-        const isTorso = (i >= 4 && i <= 7);
-        let geo = boneGeometry;
-        if (isTorso) {
-            geo = new THREE.CylinderGeometry(0.03, 0.03, 1, 12);
-            geo.translate(0, 0.5, 0);
-            geo.rotateX(Math.PI / 2);
-        }
-
-        const cylinder = new THREE.Mesh(geo, boneMat);
-        cylinder.castShadow = true;
-        cylinder.receiveShadow = true;
-        cylinder.visible = false;
-        scene.add(cylinder);
-        bones.push(cylinder);
-    }
+function rotateBoneToward(bone, fromPos, toPos) {
+    if (!bone || !fromPos || !toPos) return;
+    _v1.subVectors(toPos, fromPos);
+    if (_v1.length() < 0.001) return;
+    _v1.normalize();
+    _q.setFromUnitVectors(_up, _v1);
+    const parentWorldQuat = new THREE.Quaternion();
+    if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQuat);
+    bone.quaternion.copy(parentWorldQuat.clone().invert().multiply(_q));
 }
-createAnatomicalSkeleton();
 
-// ─── Update Logic ─────────────────────────────────────────────
+// ─── Load the Rigged Model ────────────────────────────────────
+const loader = new GLTFLoader();
+loader.load('/static/models/xbot.glb', (gltf) => {
+    model = gltf.scene;
+
+    // Scale and position the model to fit the viewer
+    const bbox = new THREE.Box3().setFromObject(model);
+    const size = bbox.getSize(new THREE.Vector3());
+    const targetHeight = 2.0;
+    const scale = targetHeight / size.y;
+    model.scale.set(scale, scale, scale);
+
+    // Recompute bbox after scaling
+    bbox.setFromObject(model);
+    const bottom = bbox.min.y;
+    model.position.y = -bottom;
+
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+        if (child.isBone || child.type === 'Bone') {
+            bones[child.name] = child;
+        }
+    });
+
+    scene.add(model);
+    console.log('Model loaded. Bones:', Object.keys(bones).join(', '));
+
+    const statusEl = document.getElementById('viewer3dStatus');
+    if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--cyan);font-size:0.5rem"></i> 3D model ready';
+
+}, (xhr) => {
+    const pct = xhr.total ? Math.round((xhr.loaded / xhr.total) * 100) : '...';
+    const statusEl = document.getElementById('viewer3dStatus');
+    if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:var(--yellow);font-size:0.5rem"></i> Loading model ${pct}%`;
+
+}, (err) => {
+    console.error('Error loading model:', err);
+    const statusEl = document.getElementById('viewer3dStatus');
+    if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--red);font-size:0.5rem"></i> Model load failed';
+});
+
+// ─── Apply Pose to Bones ──────────────────────────────────────
+function applyPoseToBones() {
+    if (!model || !lastLandmarks) return;
+
+    const lp = (i) => targetPositions[i];
+
+    const hipMid = lp(23).clone().add(lp(24)).multiplyScalar(0.5);
+    const shoulderMid = lp(11).clone().add(lp(12)).multiplyScalar(0.5);
+
+    rotateBoneToward(bones['mixamorig:Spine'],    hipMid, shoulderMid);
+    rotateBoneToward(bones['mixamorig:Spine1'],   hipMid, shoulderMid);
+    rotateBoneToward(bones['mixamorig:Spine2'],   hipMid, shoulderMid);
+    rotateBoneToward(bones['mixamorig:Neck'],     shoulderMid, lp(0));
+    rotateBoneToward(bones['mixamorig:LeftArm'],     lp(11), lp(13));
+    rotateBoneToward(bones['mixamorig:LeftForeArm'], lp(13), lp(15));
+    rotateBoneToward(bones['mixamorig:RightArm'],     lp(12), lp(14));
+    rotateBoneToward(bones['mixamorig:RightForeArm'], lp(14), lp(16));
+    rotateBoneToward(bones['mixamorig:LeftUpLeg'],  lp(23), lp(25));
+    rotateBoneToward(bones['mixamorig:LeftLeg'],    lp(25), lp(27));
+    rotateBoneToward(bones['mixamorig:RightUpLeg'], lp(24), lp(26));
+    rotateBoneToward(bones['mixamorig:RightLeg'],   lp(26), lp(28));
+}
+
+// ─── Update Skeleton (called on socket event) ─────────────────
 function updateSkeleton(landmarks) {
     if (!landmarks) return;
-    
-    // Update target positions
+    lastLandmarks = landmarks;
     for (let i = 0; i < 33; i++) {
-        if (landmarks[i] && targetSpheres[i]) {
-            targetSpheres[i].set(
+        if (landmarks[i]) {
+            targetPositions[i].set(
                 (landmarks[i][0] - 0.5) * 2,
                 (-landmarks[i][1] + 1) * 2,
                 landmarks[i][2] * 2
             );
-            
-            // Only show major joints (hide face dots 1-10, and extra hand/foot dots 17-22, 29-32)
-            const isMajorJoint = (i === 0 || (i >= 11 && i <= 16) || (i >= 23 && i <= 28));
-            
-            if (isMajorJoint && !joints[i].visible) {
-                joints[i].position.copy(targetSpheres[i]);
-                joints[i].visible = true;
-            }
         }
     }
 }
 
-// ─── UI Helpers & Socket.IO ───────────────────────────────────
+// ─── UI & Socket.IO ───────────────────────────────────────────
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 let fpsCount = 0;
 setInterval(() => { setText('viewer-fps', fpsCount); fpsCount = 0; }, 1000);
@@ -175,8 +175,10 @@ socket.on('skeleton_3d', (data) => {
         updateSkeleton(data.landmarks);
         fpsCount++;
         setText('viewer-joints', data.landmarks.length);
-        const statusEl = document.getElementById('viewer3dStatus');
-        if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--green);font-size:0.5rem"></i> Receiving pose data';
+        if (model) {
+            const statusEl = document.getElementById('viewer3dStatus');
+            if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--green);font-size:0.5rem"></i> Receiving pose data';
+        }
     }
 });
 
@@ -185,27 +187,20 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
-    const lerpFactor = 0.3;
-    
-    // Animate joints
-    for (let i = 0; i < 33; i++) {
-        if (joints[i].visible) {
-            joints[i].position.lerp(targetSpheres[i], lerpFactor);
+    // Smooth lerp
+    if (lastLandmarks) {
+        for (let i = 0; i < 33; i++) {
+            if (lastLandmarks[i]) {
+                targetPositions[i].lerp(
+                    new THREE.Vector3(
+                        (lastLandmarks[i][0] - 0.5) * 2,
+                        (-lastLandmarks[i][1] + 1) * 2,
+                        lastLandmarks[i][2] * 2
+                    ), 0.25
+                );
+            }
         }
-    }
-    
-    // Animate bones
-    for (let i = 0; i < connections.length; i++) {
-        const [a, b] = connections[i];
-        if (joints[a].visible && joints[b].visible) {
-            const start = joints[a].position;
-            const end = joints[b].position;
-            const distance = start.distanceTo(end);
-            bones[i].position.copy(start);
-            bones[i].lookAt(end);
-            bones[i].scale.set(1, 1, distance);
-            bones[i].visible = true;
-        }
+        applyPoseToBones();
     }
 
     renderer.render(scene, camera);
