@@ -152,7 +152,11 @@ function updateSkeleton(landmarks) {
                 (-landmarks[i][1] + 1) * 2,
                 landmarks[i][2] * 2
             );
-            if (!joints[i].visible) {
+            
+            // Only show major joints (hide face dots 1-10, and extra hand/foot dots 17-22, 29-32)
+            const isMajorJoint = (i === 0 || (i >= 11 && i <= 16) || (i >= 23 && i <= 28));
+            
+            if (isMajorJoint && !joints[i].visible) {
                 joints[i].position.copy(targetSpheres[i]);
                 joints[i].visible = true;
             }
