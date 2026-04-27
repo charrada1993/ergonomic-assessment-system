@@ -87,17 +87,17 @@ const loader = new GLTFLoader();
 loader.load('/static/models/xbot.glb', (gltf) => {
     model = gltf.scene;
 
-    // Scale and position the model to fit the viewer
-    const bbox = new THREE.Box3().setFromObject(model);
-    const size = bbox.getSize(new THREE.Vector3());
-    const targetHeight = 2.0;
-    const scale = targetHeight / size.y;
-    model.scale.set(scale, scale, scale);
+    // Mixamo/FBX models export in centimetres. Scale to metres.
+    // Xbot is ~170 cm tall → at scale 0.01 → 1.7 m — perfect human height.
+    const SCALE = 0.01;
+    model.scale.set(SCALE, SCALE, SCALE);
 
-    // Recompute bbox after scaling
-    bbox.setFromObject(model);
-    const bottom = bbox.min.y;
-    model.position.y = -bottom;
+    // IMPORTANT: must updateMatrixWorld after scaling before computing bbox
+    model.updateMatrixWorld(true);
+    const bbox = new THREE.Box3().setFromObject(model);
+    model.position.y = -bbox.min.y;   // ground the feet to y=0
+    model.position.x = 0;
+    model.position.z = 0;
 
     model.traverse((child) => {
         if (child.isMesh) {
@@ -110,15 +110,21 @@ loader.load('/static/models/xbot.glb', (gltf) => {
     });
 
     scene.add(model);
-    console.log('Model loaded. Bones:', Object.keys(bones).join(', '));
+
+    // Frame the full body
+    camera.position.set(0, 1.0, 3.5);
+    controls.target.set(0, 1.0, 0);
+    controls.update();
+
+    console.log('Xbot loaded. Bones:', Object.keys(bones).length);
 
     const statusEl = document.getElementById('viewer3dStatus');
-    if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--cyan);font-size:0.5rem"></i> 3D model ready';
+    if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--cyan);font-size:0.5rem"></i> 3D model ready — waiting for pose';
 
 }, (xhr) => {
     const pct = xhr.total ? Math.round((xhr.loaded / xhr.total) * 100) : '...';
     const statusEl = document.getElementById('viewer3dStatus');
-    if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:var(--yellow);font-size:0.5rem"></i> Loading model ${pct}%`;
+    if (statusEl) statusEl.innerHTML = `<i class="fas fa-circle" style="color:var(--yellow);font-size:0.5rem"></i> Loading model… ${pct}%`;
 
 }, (err) => {
     console.error('Error loading model:', err);
