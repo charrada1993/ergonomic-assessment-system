@@ -1,297 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErgoVision | Live Camera Feed</title>
-  <meta name="description" content="OAK-D live RGB and depth camera streams with IMU telemetry">
+  <meta name="description" content="OAK-D live RGB and depth streams with real-time vision pose estimation">
   <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 </head>
+
 <body>
 
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="logo-icon">⬡</span>
-    <span class="logo">ErgoVision</span>
-    <span class="badge-pill">Live Feed</span>
-  </div>
-  <div class="nav-links">
-    <a href="/"><span>📊</span><span>Dashboard</span></a>
-    <a href="/camera" class="active"><span>📷</span><span>Live Feed</span></a>
-    <a href="/rula"><span>🦾</span><span>RULA</span></a>
-    <a href="/reba"><span>🧍</span><span>REBA</span></a>
-  </div>
-  <div class="nav-right">
-    <div class="live-dot" id="liveStatus">LIVE</div>
-    <button class="theme-btn" id="themeBtn">🌙</button>
-  </div>
-</nav>
-
-<main class="container">
-
-  <div class="page-header">
-    <h1 class="page-title">📷 Live Camera Stream</h1>
-    <p class="page-sub">OAK-D Lite · RGB 1280×720 @ 30 FPS · Depth aligned · BNO086 IMU</p>
-  </div>
-
-  <!-- ── Camera stat strip ── -->
-  <div class="metrics-row" style="margin-bottom:1.5rem">
-    <div class="card metric-card" style="--accent:var(--green)">
-      <div class="metric-label"><span class="mi">⚡</span> FPS</div>
-      <div class="metric-value" id="fps">--</div>
-      <div class="metric-sub">Frames per second</div>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo-icon"><i class="fas fa-heartbeat"></i></span>
+      <span class="logo">ErgoVision</span>
+      <span class="badge-pill">Live Feed</span>
     </div>
-    <div class="card metric-card" style="--accent:var(--cyan)">
-      <div class="metric-label"><span class="mi">📸</span> Resolution</div>
-      <div class="metric-value" style="font-size:1.6rem">1280<small style="font-size:1rem;color:var(--text-muted)">×720</small></div>
-      <div class="metric-sub">RGB stream</div>
+    <div class="nav-links">
+      <a href="/"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+      <a href="/camera" class="active"><i class="fas fa-video"></i><span>Live Feed</span></a>
+      <a href="/rula"><i class="fas fa-person-rays"></i><span>RULA</span></a>
+      <a href="/reba"><i class="fas fa-person"></i><span>REBA</span></a>
+      <a href="/3d"><i class="fas fa-cube"></i><span>3D View</span></a>
     </div>
-    <div class="card metric-card" style="--accent:var(--purple)">
-      <div class="metric-label"><span class="mi">🔌</span> Connection</div>
-      <div class="metric-value" style="font-size:1.5rem" id="connType">USB3</div>
-      <div class="metric-sub" id="connStatus">Active</div>
+    <div class="nav-right">
+      <div class="live-dot" id="liveStatus">LIVE</div>
+      <button class="theme-btn" id="themeBtn">🌙</button>
     </div>
-    <div class="card metric-card" style="--accent:var(--yellow)">
-      <div class="metric-label"><span class="mi">📡</span> IMU Chip</div>
-      <div class="metric-value" style="font-size:1.4rem" id="imuChip">BNO086</div>
-      <div class="metric-sub">Rotation vector @ 400Hz</div>
-    </div>
-    <div class="card metric-card" style="--accent:var(--orange)">
-      <div class="metric-label"><span class="mi">📦</span> Total Frames</div>
-      <div class="metric-value font-mono" id="totalFrames">0</div>
-      <div class="metric-sub">Since session start</div>
-    </div>
-  </div>
+  </nav>
 
-  <!-- ── Main camera layout ── -->
-  <div class="cam-grid">
+  <main class="container">
 
-    <!-- RGB video feed -->
-    <div class="card video-panel">
-      <div class="video-header">
-        <div class="panel-title"><span class="pt-icon">🎥</span> RGB — Pose Overlay</div>
-        <div style="display:flex;gap:0.6rem;align-items:center">
-          <span class="vbadge"><span style="color:var(--green)">●</span> RGB</span>
-          <span class="vbadge font-mono" id="fpsBadge">30 FPS</span>
-        </div>
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-camera"></i> Live Camera Stream</h1>
+      <p class="page-sub"><i class="fas fa-camera" style="color:var(--cyan);margin-right:0.3rem"></i>OAK-D Vision · RGB 1280×720 @ 30 FPS · Stereo Depth aligned · Vision-only pose</p>
+    </div>
+
+    <!-- ── Camera stat strip ── -->
+    <div class="metrics-row" style="margin-bottom:1.5rem;grid-template-columns:repeat(5,1fr)">
+      <div class="card metric-card" style="--accent:var(--green)">
+        <div class="metric-label"><i class="fas fa-gauge-high" style="color:var(--green)"></i> FPS</div>
+        <div class="metric-value" id="fps">--</div>
+        <div class="metric-sub">Frames per second</div>
       </div>
-      <div class="video-wrap">
-        <img id="videoFeed"
-             src="/video_feed"
-             alt="Live RGB Camera Feed"
-             class="video-feed"
-             onload="onFrameLoad()"
-             onerror="onFeedError()">
-        <div class="video-overlay"></div>
-        <div class="video-badge">
-          <span class="vbadge"><span style="color:var(--green)">●</span> OAK-D Lite</span>
-          <span class="vbadge font-mono" id="resLabel">1280×720</span>
-          <span class="vbadge" id="depthBadge">⬡ Depth Active</span>
-        </div>
+      <div class="card metric-card" style="--accent:var(--cyan)">
+        <div class="metric-label"><i class="fas fa-expand" style="color:var(--cyan)"></i> Resolution</div>
+        <div class="metric-value" style="font-size:1.6rem">1280<small style="font-size:1rem;color:var(--text-muted)">×720</small></div>
+        <div class="metric-sub">RGB stream</div>
       </div>
-
-      <!-- IMU telemetry row below video -->
-      <div style="padding:1rem 1.25rem;border-top:1px solid var(--border)">
-        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.75rem">
-          IMU Telemetry — Live
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem">
-          <!-- Accel -->
-          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
-            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">ACCEL (m/s²)</div>
-            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
-              <span style="color:var(--red)">X: <strong id="cax">0.00</strong></span>
-              <span style="color:var(--green)">Y: <strong id="cay">0.00</strong></span>
-              <span style="color:var(--cyan)">Z: <strong id="caz">0.00</strong></span>
-            </div>
-          </div>
-          <!-- Gyro -->
-          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
-            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">GYRO (rad/s)</div>
-            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
-              <span style="color:var(--red)">X: <strong id="cgx">0.00</strong></span>
-              <span style="color:var(--green)">Y: <strong id="cgy">0.00</strong></span>
-              <span style="color:var(--cyan)">Z: <strong id="cgz">0.00</strong></span>
-            </div>
-          </div>
-          <!-- Euler -->
-          <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:0.7rem;border:1px solid var(--border)">
-            <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">ORIENTATION (°)</div>
-            <div style="display:flex;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem">
-              <span style="color:var(--purple)">R: <strong id="croll">0.0</strong></span>
-              <span style="color:var(--yellow)">P: <strong id="cpitch">0.0</strong></span>
-              <span style="color:var(--orange)">Y: <strong id="cyaw">0.0</strong></span>
-            </div>
-          </div>
-        </div>
+      <div class="card metric-card" style="--accent:var(--purple)">
+        <div class="metric-label"><i class="fas fa-plug" style="color:var(--purple)"></i> Connection</div>
+        <div class="metric-value" style="font-size:1.5rem" id="connType">USB3</div>
+        <div class="metric-sub" id="connStatus">Active</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--yellow)">
+        <div class="metric-label"><i class="fas fa-camera" style="color:var(--yellow)"></i> Cameras</div>
+        <div class="metric-value" style="font-size:1.4rem" id="camCount">--</div>
+        <div class="metric-sub" id="camMode">Connecting...</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--orange)">
+        <div class="metric-label"><i class="fas fa-film" style="color:var(--orange)"></i> Total Frames</div>
+        <div class="metric-value font-mono" id="totalFrames">0</div>
+        <div class="metric-sub">Since session start</div>
       </div>
     </div>
 
-    <!-- Right sidebar: depth preview + pose data -->
-    <div style="display:flex;flex-direction:column;gap:1.25rem">
+    <!-- ── Main camera layout ── -->
+    <div class="cam-grid">
 
-      <!-- Depth colormap preview -->
-      <div class="card depth-panel">
-        <div class="video-header" style="border-bottom:1px solid var(--border)">
-          <div class="panel-title"><span class="pt-icon">🌡️</span> Depth Map</div>
-          <span class="vbadge"><span style="color:var(--cyan)">●</span> Aligned</span>
+      <!-- RGB video feed -->
+      <div class="card video-panel">
+        <div class="video-header">
+          <div class="panel-title"><span class="pt-icon"></span> RGB — Pose Overlay</div>
+          <div style="display:flex;gap:0.6rem;align-items:center">
+            <span class="vbadge"><span style="color:var(--green)">●</span> RGB</span>
+            <span class="vbadge font-mono" id="fpsBadge">30 FPS</span>
+          </div>
         </div>
         <div class="video-wrap">
-          <img id="depthFeed"
-               src="/depth_feed"
-               alt="Depth colormap"
-               class="depth-feed"
-               onerror="this.style.display='none';document.getElementById('depthPlaceholder').style.display='flex'">
-          <div id="depthPlaceholder"
-               style="display:none;min-height:180px;align-items:center;justify-content:center;
+          <img id="videoFeed" src="/video_feed" alt="Live RGB Camera Feed" class="video-feed" onload="onFrameLoad()"
+            onerror="onFeedError()">
+          <div class="video-overlay"></div>
+          <div class="video-badge">
+            <span class="vbadge"><span style="color:var(--green)">●</span> OAK-D Lite</span>
+            <span class="vbadge font-mono" id="resLabel">1280×720</span>
+            <span class="vbadge" id="depthBadge">⬡ Depth Active</span>
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+      <!-- Right sidebar: depth preview + pose data -->
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+        <!-- Depth colormap preview -->
+        <div class="card depth-panel">
+          <div class="video-header" style="border-bottom:1px solid var(--border)">
+            <div class="panel-title"><i class="fas fa-layer-group" style="color:var(--cyan)"></i> Depth Map</div>
+            <span class="vbadge"><span style="color:var(--cyan)">●</span> Aligned</span>
+          </div>
+          <div class="video-wrap">
+            <img id="depthFeed" src="/depth_feed" alt="Depth colormap" class="depth-feed"
+              onerror="this.style.display='none';document.getElementById('depthPlaceholder').style.display='flex'">
+            <div id="depthPlaceholder" style="display:none;min-height:180px;align-items:center;justify-content:center;
                       color:var(--text-muted);font-size:0.8rem;background:var(--surface2)">
-            Depth stream unavailable
+              Depth stream unavailable
+            </div>
           </div>
         </div>
+
+        <!-- Real-time pose angles (sidebar) -->
+        <div class="card cam-stats">
+          <div class="panel-title"><i class="fas fa-person-rays" style="color:var(--cyan)"></i> Live Joint Angles</div>
+          <div class="cam-stat-row" style="grid-template-columns:1fr 1fr;margin-top:0.85rem">
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-neck)">Neck</div>
+              <div class="cam-stat-val" id="live-neck">--°</div>
+            </div>
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-trunk)">Trunk</div>
+              <div class="cam-stat-val" id="live-trunk">--°</div>
+            </div>
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-arm-l)">Arm L</div>
+              <div class="cam-stat-val" id="live-arml">--°</div>
+            </div>
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-arm-r)">Arm R</div>
+              <div class="cam-stat-val" id="live-armr">--°</div>
+            </div>
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-forearm)">Forearm</div>
+              <div class="cam-stat-val" id="live-forearm">--°</div>
+            </div>
+            <div class="cam-stat">
+              <div class="cam-stat-lbl" style="color:var(--col-wrist)">Wrist</div>
+              <div class="cam-stat-val" id="live-wrist">--°</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RULA/REBA quick scores -->
+        <div class="card cam-stats">
+          <div class="panel-title"><span class="pt-icon"></span> Quick Scores</div>
+          <div class="cam-stat-row" style="margin-top:0.85rem">
+            <div class="cam-stat" style="border-top:2px solid var(--cyan)">
+              <div class="cam-stat-lbl">RULA</div>
+              <div class="cam-stat-val" id="qs-rula">--</div>
+            </div>
+            <div class="cam-stat" style="border-top:2px solid var(--purple)">
+              <div class="cam-stat-lbl">REBA</div>
+              <div class="cam-stat-val" style="color:var(--purple)" id="qs-reba">--</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:0.85rem">
+            <span class="risk-chip" id="qs-risk">Waiting…</span>
+          </div>
+        </div>
+
+      </div><!-- /right sidebar -->
+    </div><!-- /cam-grid -->
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-chip"><span class="dot" id="camDot"></span>Camera: <strong id="camStatus">Connecting…</strong>
       </div>
-
-      <!-- Real-time pose angles -->
-      <div class="card cam-stats">
-        <div class="panel-title"><span class="pt-icon">📐</span> Live Joint Angles</div>
-        <div class="cam-stat-row" style="grid-template-columns:1fr 1fr;margin-top:0.85rem">
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-neck)">Neck</div>
-            <div class="cam-stat-val" id="live-neck">--°</div>
-          </div>
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-trunk)">Trunk</div>
-            <div class="cam-stat-val" id="live-trunk">--°</div>
-          </div>
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-arm-l)">Arm L</div>
-            <div class="cam-stat-val" id="live-arml">--°</div>
-          </div>
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-arm-r)">Arm R</div>
-            <div class="cam-stat-val" id="live-armr">--°</div>
-          </div>
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-forearm)">Forearm</div>
-            <div class="cam-stat-val" id="live-forearm">--°</div>
-          </div>
-          <div class="cam-stat">
-            <div class="cam-stat-lbl" style="color:var(--col-wrist)">Wrist</div>
-            <div class="cam-stat-val" id="live-wrist">--°</div>
-          </div>
-        </div>
+      <div class="status-chip"><span class="dot"></span>Depth: <strong>Active (aligned)</strong></div>
+      <div class="status-chip"
+        style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted)">
+        Session frames: <strong id="framesStat">0</strong>
       </div>
-
-      <!-- RULA/REBA quick scores -->
-      <div class="card cam-stats">
-        <div class="panel-title"><span class="pt-icon">📊</span> Quick Scores</div>
-        <div class="cam-stat-row" style="margin-top:0.85rem">
-          <div class="cam-stat" style="border-top:2px solid var(--cyan)">
-            <div class="cam-stat-lbl">RULA</div>
-            <div class="cam-stat-val" id="qs-rula">--</div>
-          </div>
-          <div class="cam-stat" style="border-top:2px solid var(--purple)">
-            <div class="cam-stat-lbl">REBA</div>
-            <div class="cam-stat-val" style="color:var(--purple)" id="qs-reba">--</div>
-          </div>
-        </div>
-        <div style="text-align:center;margin-top:0.85rem">
-          <span class="risk-chip" id="qs-risk">Waiting…</span>
-        </div>
-      </div>
-
-    </div><!-- /right sidebar -->
-  </div><!-- /cam-grid -->
-
-  <!-- Status bar -->
-  <div class="status-bar">
-    <div class="status-chip"><span class="dot" id="camDot"></span>Camera: <strong id="camStatus">Connecting…</strong></div>
-    <div class="status-chip"><span class="dot"></span>Depth: <strong>Active (aligned)</strong></div>
-    <div class="status-chip"><span class="dot"></span>IMU: <strong id="imuStatus">BNO086</strong></div>
-    <div class="status-chip" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted)">
-      Session frames: <strong id="framesStat">0</strong>
     </div>
-  </div>
 
-</main>
+  </main>
 
-<script>
-  const socket = io();
-  let frameCount = 0, totalFrames = 0, lastFpsTs = Date.now();
+  <script>
+    const socket = io();
+    let frameCount = 0, totalFrames = 0, lastFpsTs = Date.now();
 
-  // FPS counter via image load events
-  function onFrameLoad() {
-    frameCount++;
-    totalFrames++;
-    document.getElementById('totalFrames').textContent = totalFrames;
-    const now = Date.now();
-    if (now - lastFpsTs >= 1000) {
-      const fps = Math.round(frameCount * 1000 / (now - lastFpsTs));
-      document.getElementById('fps').textContent      = fps;
-      document.getElementById('fpsBadge').textContent = fps + ' FPS';
-      frameCount  = 0;
-      lastFpsTs   = now;
+    // FPS counter via image load events
+    function onFrameLoad() {
+      frameCount++;
+      totalFrames++;
+      document.getElementById('totalFrames').textContent = totalFrames;
+      const now = Date.now();
+      if (now - lastFpsTs >= 1000) {
+        const fps = Math.round(frameCount * 1000 / (now - lastFpsTs));
+        document.getElementById('fps').textContent = fps;
+        document.getElementById('fpsBadge').textContent = fps + ' FPS';
+        frameCount = 0;
+        lastFpsTs = now;
+      }
     }
-  }
 
-  function onFeedError() {
-    document.getElementById('camStatus').textContent = 'Disconnected';
-    document.getElementById('camDot').classList.add('warn');
-    document.getElementById('fps').textContent = '0';
-  }
-
-  function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
-
-  function classRisk(r) {
-    r = (r || '').toLowerCase();
-    if (r.includes('high')   || r.includes('critical')) return 'high';
-    if (r.includes('medium') || r.includes('moyen'))    return 'medium';
-    return 'low';
-  }
-
-  socket.on('pose_update', (data) => {
-    const a = data.angles || {};
-    setText('framesStat', ++totalFrames);
-
-    // Joint angles
-    setText('live-neck',    (+(a.neck||0)).toFixed(1) + '°');
-    setText('live-trunk',   (+(a.trunk||0)).toFixed(1) + '°');
-    setText('live-arml',    (+(a.upper_arm_left||0)).toFixed(1) + '°');
-    setText('live-armr',    (+(a.upper_arm_right||0)).toFixed(1) + '°');
-    setText('live-forearm', (+(a.lower_arm_left || a.forearm || 0)).toFixed(1) + '°');
-    setText('live-wrist',   (+(a.wrist_left || a.wrist || 0)).toFixed(1) + '°');
-
-    // Quick scores
-    setText('qs-rula', data.rula ?? '--');
-    setText('qs-reba', data.reba ?? '--');
-    const rc = classRisk(data.risk_level);
-    document.getElementById('qs-risk').textContent = data.risk_level || 'Low';
-    document.getElementById('qs-risk').className   = 'risk-chip ' + rc;
-
-    // IMU
-    if (data.imu) {
-      const [ax,ay,az] = data.imu.accel || [0,0,0];
-      const [gx,gy,gz] = data.imu.gyro  || [0,0,0];
-      const [roll,pitch,yaw] = data.imu.euler || [0,0,0];
-      setText('cax', ax.toFixed(2)); setText('cay', ay.toFixed(2)); setText('caz', az.toFixed(2));
-      setText('cgx', gx.toFixed(2)); setText('cgy', gy.toFixed(2)); setText('cgz', gz.toFixed(2));
-      setText('croll', roll.toFixed(1)); setText('cpitch', pitch.toFixed(1)); setText('cyaw', yaw.toFixed(1));
+    function onFeedError() {
+      document.getElementById('camStatus').textContent = 'Disconnected';
+      document.getElementById('camDot').classList.add('warn');
+      document.getElementById('fps').textContent = '0';
     }
-  });
 
-  socket.on('config', (cfg) => {
-    setText('camStatus', 'Active');
-    setText('connType',  cfg.usb3 ? 'USB3' : 'USB2');
-  });
+    function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
 
-  socket.on('connect',    () => setText('camStatus', 'Connected'));
-  socket.on('disconnect', () => { setText('camStatus', 'Disconnected'); document.getElementById('camDot').classList.add('warn'); });
+    function classRisk(r) {
+      r = (r || '').toLowerCase();
+      if (r.includes('high') || r.includes('critical')) return 'high';
+      if (r.includes('medium') || r.includes('moyen')) return 'medium';
+      return 'low';
+    }
 
-  // Theme
-  const btn = document.getElementById('themeBtn');
-  function applyTheme(d){ document.body.classList.toggle('dark',d); btn.textContent=d?'☀️':'🌙'; localStorage.setItem('ergo-theme',d?'dark':'light'); }
-  btn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('dark')));
-  applyTheme(localStorage.getItem('ergo-theme')==='dark');
-</script>
+    socket.on('pose_update', (data) => {
+      const a = data.angles || {};
+      setText('framesStat', ++totalFrames);
+
+      // Joint angles
+      setText('live-neck', (+(a.neck || 0)).toFixed(1) + '°');
+      setText('live-trunk', (+(a.trunk || 0)).toFixed(1) + '°');
+      setText('live-arml', (+(a.upper_arm_left || 0)).toFixed(1) + '°');
+      setText('live-armr', (+(a.upper_arm_right || 0)).toFixed(1) + '°');
+      setText('live-forearm', (+(a.lower_arm_left || a.forearm || 0)).toFixed(1) + '°');
+      setText('live-wrist', (+(a.wrist_left || a.wrist || 0)).toFixed(1) + '°');
+
+      // Quick scores
+      setText('qs-rula', data.rula ?? '--');
+      setText('qs-reba', data.reba ?? '--');
+      const rc = classRisk(data.risk_level);
+      document.getElementById('qs-risk').textContent = data.risk_level || 'Low';
+      document.getElementById('qs-risk').className = 'risk-chip ' + rc;
+
+    });
+
+    socket.on('config', (cfg) => {
+      const modeMap = { 1: 'Single-view', 2: 'Dual-view fusion', 3: 'Multi-view 3D' };
+      setText('camStatus', 'Active (' + cfg.mode + ' Cams)');
+      setText('connType', cfg.usb3 ? 'USB3' : 'USB2');
+      setText('camCount', cfg.mode);
+      setText('camMode', modeMap[cfg.mode] || 'Unknown');
+    });
+
+    socket.on('connect', () => setText('camStatus', 'Connected'));
+    socket.on('disconnect', () => { setText('camStatus', 'Disconnected'); document.getElementById('camDot').classList.add('warn'); });
+
+    // Theme
+    const btn = document.getElementById('themeBtn');
+    function applyTheme(isLight) {
+      document.body.classList.toggle('light-mode', isLight);
+      btn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('ergo-theme', isLight ? 'light' : 'dark');
+    }
+    btn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light-mode')));
+    applyTheme(localStorage.getItem('ergo-theme') === 'light');
+  </script>
 </body>
+
 </html>

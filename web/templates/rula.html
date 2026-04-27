@@ -1,341 +1,390 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErgoVision | RULA Analysis</title>
   <meta name="description" content="RULA - Rapid Upper Limb Assessment real-time scores and sub-scores">
   <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
 
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="logo-icon">⬡</span>
-    <span class="logo">ErgoVision</span>
-    <span class="badge-pill">RULA</span>
-  </div>
-  <div class="nav-links">
-    <a href="/"><span>📊</span><span>Dashboard</span></a>
-    <a href="/camera"><span>📷</span><span>Live Feed</span></a>
-    <a href="/rula" class="active"><span>🦾</span><span>RULA</span></a>
-    <a href="/reba"><span>🧍</span><span>REBA</span></a>
-  </div>
-  <div class="nav-right">
-    <div class="live-dot">LIVE</div>
-    <button class="theme-btn" id="themeBtn">🌙</button>
-  </div>
-</nav>
-
-<main class="container">
-
-  <div class="page-header">
-    <h1 class="page-title">🦾 RULA Assessment</h1>
-    <p class="page-sub">Rapid Upper Limb Assessment — real-time sub-scores and risk level</p>
-  </div>
-
-  <!-- ── Top score strip ── -->
-  <div class="metrics-row" style="margin-bottom:1.5rem">
-    <div class="card metric-card" style="--accent:var(--cyan)">
-      <div class="metric-label"><span class="mi">📊</span> Final RULA Score</div>
-      <div class="metric-value" id="rulaFinal">--</div>
-      <div><span class="risk-chip" id="rulaRiskChip">Waiting</span></div>
-      <div class="metric-bar"><div class="metric-bar-fill" id="rulaFinalBar"></div></div>
-      <div class="metric-sub">Scale: 1 (safe) → 7 (hazardous)</div>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo-icon"><i class="fas fa-heartbeat"></i></span>
+      <span class="logo">ErgoVision</span>
+      <span class="badge-pill">RULA</span>
     </div>
-    <div class="card metric-card" style="--accent:var(--green)">
-      <div class="metric-label"><span class="mi">💪</span> Group A Score</div>
-      <div class="metric-value" id="rula-groupA">--</div>
-      <div class="metric-sub">Upper arm + Lower arm + Wrist</div>
+    <div class="nav-links">
+      <a href="/"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+      <a href="/camera"><i class="fas fa-video"></i><span>Live Feed</span></a>
+      <a href="/rula" class="active"><i class="fas fa-person-rays"></i><span>RULA</span></a>
+      <a href="/reba"><i class="fas fa-person"></i><span>REBA</span></a>
+      <a href="/3d"><i class="fas fa-cube"></i><span>3D View</span></a>
     </div>
-    <div class="card metric-card" style="--accent:var(--purple)">
-      <div class="metric-label"><span class="mi">🏃</span> Group B Score</div>
-      <div class="metric-value" id="rula-groupB">--</div>
-      <div class="metric-sub">Neck + Trunk + Legs</div>
+    <div class="nav-right">
+      <div class="live-dot">LIVE</div>
+      <button class="theme-btn" id="themeBtn">🌙</button>
     </div>
-    <div class="card metric-card" style="--accent:var(--yellow)">
-      <div class="metric-label"><span class="mi">⚡</span> Score C</div>
-      <div class="metric-value" id="rula-scoreC">--</div>
-      <div class="metric-sub">A×B lookup table result</div>
-    </div>
-  </div>
+  </nav>
 
-  <!-- ── Sub-score breakdown ── -->
-  <div class="assessment-grid">
+  <main class="container">
 
-    <!-- Group A -->
-    <div class="card group-card">
-      <div class="group-title" style="color:var(--green)">Group A — Upper Limbs</div>
-      <div class="sub-score-list">
-        <div class="sub-score">
-          <span class="ss-label">Upper Arm</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-upper-arm" style="background:var(--col-arm-l);width:0%"></div></div>
-          <span class="ss-score" id="sc-upper-arm" style="color:var(--col-arm-l)">--</span>
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-clipboard-list"></i> RULA Assessment</h1>
+      <p class="page-sub">Rapid Upper Limb Assessment — real-time sub-scores and risk level</p>
+    </div>
+
+    <!-- ── Top score strip ── -->
+    <div class="metrics-row" style="margin-bottom:1.5rem">
+      <div class="card metric-card" style="--accent:var(--cyan)">
+        <div class="metric-label"><span class="mi"></span> Final RULA Score</div>
+        <div class="metric-value" id="rulaFinal">--</div>
+        <div><span class="risk-chip" id="rulaRiskChip">Waiting</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="rulaFinalBar"></div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Lower Arm (Forearm)</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-lower-arm" style="background:var(--col-forearm);width:0%"></div></div>
-          <span class="ss-score" id="sc-lower-arm" style="color:var(--col-forearm)">--</span>
+        <div class="metric-sub">Scale: 1 (safe) → 7 (hazardous)</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--green)">
+        <div class="metric-label"><span class="mi"></span> Group A Score</div>
+        <div class="metric-value" id="rula-groupA">--</div>
+        <div class="metric-sub">Upper arm + Lower arm + Wrist</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--purple)">
+        <div class="metric-label"><span class="mi"></span> Group B Score</div>
+        <div class="metric-value" id="rula-groupB">--</div>
+        <div class="metric-sub">Neck + Trunk + Legs</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--yellow)">
+        <div class="metric-label"><span class="mi"></span> Score C</div>
+        <div class="metric-value" id="rula-scoreC">--</div>
+        <div class="metric-sub">A×B lookup table result</div>
+      </div>
+    </div>
+
+    <!-- ── Sub-score breakdown ── -->
+    <div class="assessment-grid">
+
+      <!-- Group A -->
+      <div class="card group-card">
+        <div class="group-title" style="color:var(--green)">Group A — Upper Limbs</div>
+        <div class="sub-score-list">
+          <div class="sub-score">
+            <span class="ss-label">Upper Arm</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-upper-arm" style="background:var(--col-arm-l);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-upper-arm" style="color:var(--col-arm-l)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Lower Arm (Forearm)</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-lower-arm" style="background:var(--col-forearm);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-lower-arm" style="color:var(--col-forearm)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Wrist Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-wrist" style="background:var(--col-wrist);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-wrist" style="color:var(--col-wrist)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Wrist Twist</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-wrist-twist" style="background:var(--orange);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-wrist-twist" style="color:var(--orange)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Load / Force</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-load" style="background:var(--yellow);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-load" style="color:var(--yellow)">--</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Wrist Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-wrist" style="background:var(--col-wrist);width:0%"></div></div>
-          <span class="ss-score" id="sc-wrist" style="color:var(--col-wrist)">--</span>
+      </div>
+
+      <!-- Group B -->
+      <div class="card group-card">
+        <div class="group-title" style="color:var(--purple)">Group B — Neck, Trunk &amp; Legs</div>
+        <div class="sub-score-list">
+          <div class="sub-score">
+            <span class="ss-label">Neck Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-neck" style="background:var(--col-neck);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-neck" style="color:var(--col-neck)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Trunk Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-trunk" style="background:var(--col-trunk);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-trunk" style="color:var(--col-trunk)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Legs / Support</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-legs" style="background:var(--col-knee);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-legs" style="color:var(--col-knee)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Muscle Use</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-muscle" style="background:var(--green);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-muscle" style="color:var(--green)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Activity Score</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-activity" style="background:var(--cyan);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-activity" style="color:var(--cyan)">--</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Wrist Twist</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-wrist-twist" style="background:var(--orange);width:0%"></div></div>
-          <span class="ss-score" id="sc-wrist-twist" style="color:var(--orange)">--</span>
+      </div>
+
+    </div>
+
+    <!-- ── Live Camera & Final Score ── -->
+    <div class="assessment-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 1.25rem;">
+      <!-- RGB video feed -->
+      <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="panel-header" style="padding: 1rem; border-bottom: 1px solid var(--border);">
+          <div class="panel-title"><i class="fas fa-video" style="color:var(--cyan)"></i> Live Assessment View</div>
+          <div style="display:flex;gap:0.6rem;align-items:center">
+             <span style="font-size: 0.7rem; color: var(--green);">●</span><span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">RGB</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Load / Force</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-load" style="background:var(--yellow);width:0%"></div></div>
-          <span class="ss-score" id="sc-load" style="color:var(--yellow)">--</span>
+        <div style="position: relative; width: 100%; background: #000; flex: 1; display: flex; justify-content: center; align-items: center; min-height: 240px;">
+          <img id="videoFeed" src="/video_feed" alt="Live RGB Camera Feed" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+      </div>
+
+      <!-- Final score card -->
+      <div class="card final-score-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center;">
+        <div class="final-score-num" id="rulaFinalBig">--</div>
+        <div class="final-score-label">RULA Final Score</div>
+        <div style="margin-top:0.75rem"><span class="risk-chip" id="rulaActionChip">Waiting for data…</span></div>
+        <div class="action-text" id="rulaActionText">
+          Stand in front of the camera. Real-time RULA assessment will begin automatically.
         </div>
       </div>
     </div>
 
-    <!-- Group B -->
-    <div class="card group-card">
-      <div class="group-title" style="color:var(--purple)">Group B — Neck, Trunk &amp; Legs</div>
-      <div class="sub-score-list">
-        <div class="sub-score">
-          <span class="ss-label">Neck Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-neck" style="background:var(--col-neck);width:0%"></div></div>
-          <span class="ss-score" id="sc-neck" style="color:var(--col-neck)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Trunk Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-trunk" style="background:var(--col-trunk);width:0%"></div></div>
-          <span class="ss-score" id="sc-trunk" style="color:var(--col-trunk)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Legs / Support</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-legs" style="background:var(--col-knee);width:0%"></div></div>
-          <span class="ss-score" id="sc-legs" style="color:var(--col-knee)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Muscle Use</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-muscle" style="background:var(--green);width:0%"></div></div>
-          <span class="ss-score" id="sc-muscle" style="color:var(--green)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Activity Score</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-activity" style="background:var(--cyan);width:0%"></div></div>
-          <span class="ss-score" id="sc-activity" style="color:var(--cyan)">--</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Final score card ── -->
-  <div class="card final-score-card" style="margin-bottom:1.25rem">
-    <div class="final-score-num" id="rulaFinalBig">--</div>
-    <div class="final-score-label">RULA Final Score</div>
-    <div style="margin-top:0.75rem"><span class="risk-chip" id="rulaActionChip">Waiting for data…</span></div>
-    <div class="action-text" id="rulaActionText">
-      Stand in front of the camera. Real-time RULA assessment will begin automatically.
-    </div>
-  </div>
-
-  <!-- ── RULA history chart ── -->
-  <div class="card chart-panel" style="margin-bottom:1.25rem">
-    <div class="panel-header">
-      <div class="panel-title"><span class="pt-icon">📈</span> RULA Score History</div>
-      <div style="display:flex;gap:1rem;font-size:0.72rem;color:var(--text-muted)">
-        <span style="color:var(--cyan)">━ RULA</span>
-        <span style="color:var(--green)">━ Group A</span>
-        <span style="color:var(--purple)">━ Group B</span>
-      </div>
-    </div>
-    <canvas id="rulaChart" height="80"></canvas>
-  </div>
-
-  <!-- ── Per-joint angle mini charts ── -->
-  <div class="assessment-grid">
-    <div class="card chart-panel">
+    <!-- ── RULA history chart ── -->
+    <div class="card chart-panel" style="margin-bottom:1.25rem">
       <div class="panel-header">
-        <div class="panel-title"><span class="pt-icon" style="color:var(--col-arm-l)">●</span> Upper Arm Angle</div>
+        <div class="panel-title"><span class="pt-icon"></span> RULA Score History</div>
+        <div style="display:flex;gap:1rem;font-size:0.72rem;color:var(--text-muted)">
+          <span style="color:var(--cyan)">━ RULA</span>
+          <span style="color:var(--green)">━ Group A</span>
+          <span style="color:var(--purple)">━ Group B</span>
+        </div>
       </div>
-      <canvas id="chartArmAngle" height="80"></canvas>
+      <canvas id="rulaChart" height="80"></canvas>
     </div>
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span class="pt-icon" style="color:var(--col-neck)">●</span> Neck Angle</div>
+
+    <!-- ── Per-joint angle mini charts ── -->
+    <div class="assessment-grid">
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon" style="color:var(--col-arm-l)">●</span> Upper Arm Angle</div>
+        </div>
+        <canvas id="chartArmAngle" height="80"></canvas>
       </div>
-      <canvas id="chartNeckAngle" height="80"></canvas>
-    </div>
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span class="pt-icon" style="color:var(--col-forearm)">●</span> Forearm Angle</div>
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon" style="color:var(--col-neck)">●</span> Neck Angle</div>
+        </div>
+        <canvas id="chartNeckAngle" height="80"></canvas>
       </div>
-      <canvas id="chartForearmAngle" height="80"></canvas>
-    </div>
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span class="pt-icon" style="color:var(--col-wrist)">●</span> Wrist Angle</div>
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon" style="color:var(--col-forearm)">●</span> Forearm Angle</div>
+        </div>
+        <canvas id="chartForearmAngle" height="80"></canvas>
       </div>
-      <canvas id="chartWristAngle" height="80"></canvas>
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span class="pt-icon" style="color:var(--col-wrist)">●</span> Wrist Angle</div>
+        </div>
+        <canvas id="chartWristAngle" height="80"></canvas>
+      </div>
     </div>
-  </div>
 
-</main>
+  </main>
 
-<script>
-const socket = io();
-const MAX = 60;
+  <script>
+    const socket = io();
+    const MAX = 60;
 
-function ts() { return new Date().toLocaleTimeString('en-GB', { hour12: false }); }
+    function ts() { return new Date().toLocaleTimeString('en-GB', { hour12: false }); }
 
-function mkChart(id, colour, label) {
-  return new Chart(document.getElementById(id).getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [{ label, data: [], borderColor: colour, backgroundColor: colour + '22',
-                   borderWidth: 2, pointRadius: 0, tension: 0.35, fill: true }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: true, animation: false,
-      scales: {
-        x: { ticks: { color:'#6b7a99', maxTicksLimit:6, font:{size:10} }, grid: { color:'rgba(255,255,255,0.04)' } },
-        y: { beginAtZero: true, ticks: { color:'#6b7a99', font:{size:10} }, grid: { color:'rgba(255,255,255,0.05)' } }
-      },
-      plugins: { legend:{display:false}, tooltip:{ backgroundColor:'#111827', titleColor:'#e8edf5', bodyColor:'#6b7a99' } }
+    function mkChart(id, colour, label) {
+      return new Chart(document.getElementById(id).getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label, data: [], borderColor: colour, backgroundColor: colour + '22',
+            borderWidth: 2, pointRadius: 0, tension: 0.35, fill: true
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true, animation: false,
+          scales: {
+            x: { ticks: { color: '#6b7a99', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { beginAtZero: true, ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          },
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', titleColor: '#e8edf5', bodyColor: '#6b7a99' } }
+        }
+      });
     }
-  });
-}
 
-function push(chart, val) {
-  chart.data.labels.push(ts());
-  chart.data.datasets[0].data.push(val);
-  if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
-  chart.update('none');
-}
+    function push(chart, val) {
+      chart.data.labels.push(ts());
+      chart.data.datasets[0].data.push(val);
+      if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+      chart.update('none');
+    }
 
-// RULA multi-line history chart
-const rulaHistCtx = document.getElementById('rulaChart').getContext('2d');
-const rulaHistChart = new Chart(rulaHistCtx, {
-  type: 'line',
-  data: {
-    labels: [],
-    datasets: [
-      { label:'RULA', data:[], borderColor:'#00d4ff', backgroundColor:'#00d4ff18', borderWidth:2.5, pointRadius:0, tension:0.35, fill:true },
-      { label:'Group A', data:[], borderColor:'#00e5a0', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0.35, fill:false },
-      { label:'Group B', data:[], borderColor:'#9b59ff', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0.35, fill:false, borderDash:[4,4] },
-    ]
-  },
-  options: {
-    responsive:true, maintainAspectRatio:true, animation:false,
-    scales: {
-      x: { ticks:{color:'#6b7a99',maxTicksLimit:8,font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'} },
-      y: { beginAtZero:true, max:8, ticks:{color:'#6b7a99',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} }
-    },
-    plugins: {
-      legend:{ display:true, labels:{color:'#6b7a99',font:{size:10},boxWidth:10,padding:14} },
-      tooltip:{ backgroundColor:'#111827', titleColor:'#e8edf5', bodyColor:'#6b7a99' }
-    },
-    interaction:{ mode:'index', intersect:false }
-  }
-});
+    // RULA multi-line history chart
+    const rulaHistCtx = document.getElementById('rulaChart').getContext('2d');
+    const rulaHistChart = new Chart(rulaHistCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'RULA', data: [], borderColor: '#00d4ff', backgroundColor: '#00d4ff18', borderWidth: 2.5, pointRadius: 0, tension: 0.35, fill: true },
+          { label: 'Group A', data: [], borderColor: '#00e5a0', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.35, fill: false },
+          { label: 'Group B', data: [], borderColor: '#9b59ff', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.35, fill: false, borderDash: [4, 4] },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true, animation: false,
+        scales: {
+          x: { ticks: { color: '#6b7a99', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { beginAtZero: true, max: 8, ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        },
+        plugins: {
+          legend: { display: true, labels: { color: '#6b7a99', font: { size: 10 }, boxWidth: 10, padding: 14 } },
+          tooltip: { backgroundColor: '#111827', titleColor: '#e8edf5', bodyColor: '#6b7a99' }
+        },
+        interaction: { mode: 'index', intersect: false }
+      }
+    });
 
-// Joint mini charts
-const cArm     = mkChart('chartArmAngle',     '#00e5a0', 'Upper Arm °');
-const cNeck    = mkChart('chartNeckAngle',    '#ff4d6d', 'Neck °');
-const cForearm = mkChart('chartForearmAngle', '#ffc94d', 'Forearm °');
-const cWrist   = mkChart('chartWristAngle',   '#ff7c3e', 'Wrist °');
+    // Joint mini charts
+    const cArm = mkChart('chartArmAngle', '#00e5a0', 'Upper Arm °');
+    const cNeck = mkChart('chartNeckAngle', '#ff4d6d', 'Neck °');
+    const cForearm = mkChart('chartForearmAngle', '#ffc94d', 'Forearm °');
+    const cWrist = mkChart('chartWristAngle', '#ff7c3e', 'Wrist °');
 
-const ACTIONS = [
-  '',
-  '1–2: Acceptable posture. No immediate action required.',
-  '1–2: Acceptable posture. Monitor over time.',
-  '3–4: Investigate further. Consider changes soon.',
-  '3–4: Investigate further. Plan ergonomic intervention.',
-  '5–6: Investigation and changes required immediately.',
-  '5–6: Investigation and changes required immediately.',
-  '7: Immediate action required — high injury risk!',
-];
+    const ACTIONS = [
+      '',
+      '1–2: Acceptable posture. No immediate action required.',
+      '1–2: Acceptable posture. Monitor over time.',
+      '3–4: Investigate further. Consider changes soon.',
+      '3–4: Investigate further. Plan ergonomic intervention.',
+      '5–6: Investigation and changes required immediately.',
+      '5–6: Investigation and changes required immediately.',
+      '7: Immediate action required — high injury risk!',
+    ];
 
-function setBar(id, val, max) {
-  const el = document.getElementById(id);
-  if (el) el.style.width = Math.min((val/max)*100,100) + '%';
-}
-function setText(id, v) { const e=document.getElementById(id); if(e) e.textContent=v; }
-function classRisk(r) {
-  r = (r||'').toLowerCase();
-  if (r.includes('high')||r.includes('critical')||r.includes('élevé')) return 'high';
-  if (r.includes('medium')||r.includes('moyen'))                        return 'medium';
-  return 'low';
-}
+    function setBar(id, val, max) {
+      const el = document.getElementById(id);
+      if (el) el.style.width = Math.min((val / max) * 100, 100) + '%';
+    }
+    function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+    function classRisk(r) {
+      r = (r || '').toLowerCase();
+      if (r.includes('high') || r.includes('critical') || r.includes('élevé')) return 'high';
+      if (r.includes('medium') || r.includes('moyen')) return 'medium';
+      return 'low';
+    }
 
-socket.on('pose_update', (data) => {
-  const rula = data.rula || 0;
-  const a    = data.angles || {};
-  const d    = data.rula_details || {};
-  const rc   = classRisk(data.risk_level);
+    socket.on('pose_update', (data) => {
+      const rula = data.rula || 0;
+      const a = data.angles || {};
+      const d = data.rula_details || {};
+      const rc = classRisk(data.risk_level);
 
-  // Score cards
-  setText('rulaFinal',  rula);
-  setText('rulaFinalBig', rula);
-  setText('rula-groupA', d.score_a || '--');
-  setText('rula-groupB', d.score_b || '--');
-  setText('rula-scoreC', d.score_c || '--');
+      // Score cards
+      setText('rulaFinal', rula);
+      setText('rulaFinalBig', rula);
+      setText('rula-groupA', d.score_a || '--');
+      setText('rula-groupB', d.score_b || '--');
+      setText('rula-scoreC', d.score_c || '--');
 
-  setBar('rulaFinalBar', rula, 7);
+      setBar('rulaFinalBar', rula, 7);
 
-  // Risk chips
-  document.getElementById('rulaRiskChip').textContent = data.risk_level || 'Low';
-  document.getElementById('rulaRiskChip').className   = 'risk-chip ' + rc;
-  document.getElementById('rulaActionChip').textContent = data.risk_level || 'Low';
-  document.getElementById('rulaActionChip').className   = 'risk-chip ' + rc;
+      // Risk chips
+      document.getElementById('rulaRiskChip').textContent = data.risk_level || 'Low';
+      document.getElementById('rulaRiskChip').className = 'risk-chip ' + rc;
+      document.getElementById('rulaActionChip').textContent = data.risk_level || 'Low';
+      document.getElementById('rulaActionChip').className = 'risk-chip ' + rc;
 
-  // Action text
-  setText('rulaActionText', ACTIONS[Math.min(rula, 7)] || '');
+      // Action text
+      setText('rulaActionText', ACTIONS[Math.min(rula, 7)] || '');
 
-  // Sub-scores
-  const scoreMap = [
-    ['upper-arm',   d.upper_arm,  6],
-    ['lower-arm',   d.lower_arm,  3],
-    ['wrist',       d.wrist,      4],
-    ['wrist-twist', d.wrist_twist,2],
-    ['load',        d.load,       3],
-    ['neck',        d.neck,       6],
-    ['trunk',       d.trunk,      6],
-    ['legs',        d.legs,       2],
-    ['muscle',      d.muscle,     1],
-    ['activity',    d.activity,   1],
-  ];
-  scoreMap.forEach(([key, val, max]) => {
-    setText('sc-' + key, val ?? '--');
-    setBar('bar-' + key, val || 0, max);
-  });
+      // Sub-scores
+      const scoreMap = [
+        ['upper-arm', d.upper_arm, 6],
+        ['lower-arm', d.lower_arm, 3],
+        ['wrist', d.wrist, 4],
+        ['wrist-twist', d.wrist_twist, 2],
+        ['load', d.load, 3],
+        ['neck', d.neck, 6],
+        ['trunk', d.trunk, 6],
+        ['legs', d.legs, 2],
+        ['muscle', d.muscle, 1],
+        ['activity', d.activity, 1],
+      ];
+      scoreMap.forEach(([key, val, max]) => {
+        setText('sc-' + key, val ?? '--');
+        setBar('bar-' + key, val || 0, max);
+      });
 
-  // RULA history chart
-  rulaHistChart.data.labels.push(ts());
-  rulaHistChart.data.datasets[0].data.push(rula);
-  rulaHistChart.data.datasets[1].data.push(d.score_a || 0);
-  rulaHistChart.data.datasets[2].data.push(d.score_b || 0);
-  if (rulaHistChart.data.labels.length > MAX) {
-    rulaHistChart.data.labels.shift();
-    rulaHistChart.data.datasets.forEach(ds => ds.data.shift());
-  }
-  rulaHistChart.update('none');
+      // RULA history chart
+      rulaHistChart.data.labels.push(ts());
+      rulaHistChart.data.datasets[0].data.push(rula);
+      rulaHistChart.data.datasets[1].data.push(d.score_a || 0);
+      rulaHistChart.data.datasets[2].data.push(d.score_b || 0);
+      if (rulaHistChart.data.labels.length > MAX) {
+        rulaHistChart.data.labels.shift();
+        rulaHistChart.data.datasets.forEach(ds => ds.data.shift());
+      }
+      rulaHistChart.update('none');
 
-  // Joint mini charts
-  push(cArm,     +(a.upper_arm_left||0));
-  push(cNeck,    +(a.neck||0));
-  push(cForearm, +(a.lower_arm_left || a.forearm || 0));
-  push(cWrist,   +(a.wrist_left || a.wrist || 0));
-});
+      // Joint mini charts
+      push(cArm, +(a.upper_arm_left || 0));
+      push(cNeck, +(a.neck || 0));
+      push(cForearm, +(a.lower_arm_left || a.forearm || 0));
+      push(cWrist, +(a.wrist_left || a.wrist || 0));
+    });
 
-// Theme toggle
-const btn = document.getElementById('themeBtn');
-function applyTheme(d){ document.body.classList.toggle('dark',d); btn.textContent=d?'☀️':'🌙'; localStorage.setItem('ergo-theme',d?'dark':'light'); }
-btn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('dark')));
-applyTheme(localStorage.getItem('ergo-theme')==='dark');
-</script>
+    // Theme toggle
+    const btn = document.getElementById('themeBtn');
+    function applyTheme(isLight) {
+      document.body.classList.toggle('light-mode', isLight);
+      btn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('ergo-theme', isLight ? 'light' : 'dark');
+    }
+    btn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light-mode')));
+    applyTheme(localStorage.getItem('ergo-theme') === 'light');
+  </script>
 </body>
+
 </html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErgoVision | 3D Skeleton Viewer</title>
+    <meta name="description" content="3D representation of ergonomic posture using Three.js">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-icon"><i class="fas fa-heartbeat"></i></span>
+            <span class="logo">ErgoVision</span>
+            <span class="badge-pill">3D Viewer</span>
+        </div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+            <a href="/camera"><i class="fas fa-video"></i><span>Live Feed</span></a>
+            <a href="/rula"><i class="fas fa-person-rays"></i><span>RULA</span></a>
+            <a href="/reba"><i class="fas fa-person"></i><span>REBA</span></a>
+            <a href="/3d" class="active"><i class="fas fa-cube"></i><span>3D View</span></a>
+        </div>
+        <div class="nav-right">
+            <div class="live-dot" id="liveStatus">LIVE</div>
+            <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-cubes"></i> 3D Pose Visualization</h1>
+            <p class="page-sub">Real-time stereoscopic depth fusion mapped to a 3D skeletal space</p>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; position: relative;">
+        <div class="card" style="padding:0;overflow:hidden;position:relative;">
+            <!-- Overlay info strip -->
+            <div style="position:absolute;top:16px;left:16px;z-index:10;display:flex;align-items:center;gap:0.75rem;">
+              <div class="panel-title" style="font-size:0.92rem;">
+                <i class="fas fa-vr-cardboard" style="color:var(--cyan)"></i> Interactive 3D Skeleton
+              </div>
+              <span style="font-size:0.72rem;color:var(--text-muted);background:rgba(0,0,0,0.4);padding:3px 10px;border-radius:20px;border:1px solid var(--border);backdrop-filter:blur(8px);">
+                <i class="fas fa-mouse"></i> Drag · Scroll to zoom
+              </span>
+            </div>
+            <!-- Connection status badge -->
+            <div id="viewer3dStatus" style="position:absolute;top:16px;right:16px;z-index:10;font-size:0.72rem;color:var(--text-muted);background:rgba(0,0,0,0.4);padding:4px 12px;border-radius:20px;border:1px solid var(--border);backdrop-filter:blur(8px);">
+              <i class="fas fa-circle" style="color:var(--yellow);font-size:0.5rem"></i> Waiting for pose data…
+            </div>
+            <!-- Three.js Canvas -->
+            <div id="canvas-container" style="width:100%;height:72vh;border-radius:var(--radius-lg);"></div>
+        </div>
+
+        <!-- Info row below 3D viewer -->
+        <div class="metrics-row" style="margin-top:1.25rem;">
+          <div class="card metric-card" style="--accent:var(--cyan);">
+            <div class="metric-label"><i class="fas fa-camera" style="color:var(--cyan)"></i> Camera Mode</div>
+            <div class="metric-value" style="font-size:1.6rem;" id="viewer-cam-mode">--</div>
+            <div class="metric-sub">Active configuration</div>
+          </div>
+          <div class="card metric-card" style="--accent:var(--purple);">
+            <div class="metric-label"><i class="fas fa-bone" style="color:var(--purple)"></i> Joints Tracked</div>
+            <div class="metric-value" style="font-size:1.6rem;" id="viewer-joints">--</div>
+            <div class="metric-sub">MediaPipe landmarks</div>
+          </div>
+          <div class="card metric-card" style="--accent:var(--green);">
+            <div class="metric-label"><i class="fas fa-wave-square" style="color:var(--green)"></i> Skeleton FPS</div>
+            <div class="metric-value" style="font-size:1.6rem;" id="viewer-fps">--</div>
+            <div class="metric-sub">3D updates per second</div>
+          </div>
+        </div>
+    </main>
+
+    <!-- Theme script (same as dashboard) -->
+    <script>
+        const btn = document.getElementById('themeBtn');
+        function applyTheme(isLight) {
+            document.body.classList.toggle('light-mode', isLight);
+            btn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            localStorage.setItem('ergo-theme', isLight ? 'light' : 'dark');
+        }
+        btn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light-mode')));
+        applyTheme(localStorage.getItem('ergo-theme') === 'light');
+    </script>
+
+    <!-- Load our 3D Viewer Script as a module -->
+    <script type="module" src="/static/js/3d_viewer.js"></script>
+
+</body>
+
+</html>

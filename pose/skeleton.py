@@ -18,47 +18,74 @@ RIGHT_ANKLE = 28
 
 class SkeletonBuilder:
     @staticmethod
-    def angle_between(v1, v2):
-        cos = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
-        cos = np.clip(cos, -1.0, 1.0)
-        return np.degrees(np.arccos(cos))
+    def compute_euler(v):
+        """
+        Compute Pitch (sagittal plane: flexion/extension) and 
+        Roll (coronal plane: abduction/adduction) using atan2.
+        MediaPipe coordinate system: X is right, Y is down, Z is forward.
+        """
+        vx, vy, vz = v
+        # Pitch (Flexion/Extension): Angle in Y-Z plane relative to vertical (Y)
+        pitch = np.degrees(np.arctan2(vz, vy))
+        # Roll (Abduction/Adduction): Angle in X-Y plane relative to vertical (Y)
+        roll = np.degrees(np.arctan2(vx, vy))
+        return pitch, roll
 
     def compute_angles(self, landmarks_3d):
-        """Compute joint angles from 33x3 MediaPipe landmarks."""
+        """Compute signed joint angles from 33x3 MediaPipe landmarks."""
         if landmarks_3d is None or len(landmarks_3d) < 29:
             return {}
         angles = {}
-        # Neck angle (vertical: nose to shoulder)
+        
+        # Neck angle (shoulder to nose)
         neck_vec = landmarks_3d[NOSE] - landmarks_3d[LEFT_SHOULDER]
-        vertical = np.array([0, -1, 0])
-        angles['neck'] = self.angle_between(neck_vec, vertical)
+        # Nose is above shoulder, so vy is negative. Invert to make down positive for math consistency, 
+        # or just use -neck_vec so it points down.
+        neck_pitch, neck_roll = self.compute_euler(-neck_vec)
+        angles['neck'] = neck_pitch
+        angles['neck_mod'] = 1 if abs(neck_roll) > 10 else 0  # Lateral bend/twist
 
-        # Trunk angle (vertical: shoulder to hip)
+        # Trunk angle (hip to shoulder)
         trunk_vec = landmarks_3d[LEFT_SHOULDER] - landmarks_3d[LEFT_HIP]
-        angles['trunk'] = self.angle_between(trunk_vec, vertical)
+        trunk_pitch, trunk_roll = self.compute_euler(-trunk_vec)
+        angles['trunk'] = trunk_pitch
+        angles['trunk_mod'] = 1 if abs(trunk_roll) > 10 else 0
 
-        # Upper arm (left) - angle from vertical
+        # Upper arm (left) (shoulder to elbow)
         upper_arm_vec = landmarks_3d[LEFT_ELBOW] - landmarks_3d[LEFT_SHOULDER]
-        angles['upper_arm_left'] = self.angle_between(upper_arm_vec, vertical)
+        arm_pitch, arm_roll = self.compute_euler(upper_arm_vec)
+        angles['upper_arm_left'] = arm_pitch
+        angles['shoulder_mod'] = 1 if abs(arm_roll) > 20 else 0  # Abduction
 
-        # Elbow (left) - angle between upper arm and forearm
+        # Elbow (left)
         forearm_vec = landmarks_3d[LEFT_WRIST] - landmarks_3d[LEFT_ELBOW]
-        upper_rev = landmarks_3d[LEFT_SHOULDER] - landmarks_3d[LEFT_ELBOW]
-        angles['elbow_left'] = self.angle_between(forearm_vec, upper_rev)
+        # Elbow flexion is the angle between upper arm and forearm. 
+        # We can use the generic angle between them for flexion:
+        cos = np.dot(upper_arm_vec, forearm_vec) / (np.linalg.norm(upper_arm_vec) * np.linalg.norm(forearm_vec) + 1e-6)
+        angles['elbow_left'] = np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))
 
-        # Wrist (left) - simplified flexion (forearm to hand)
-        wrist_vec = landmarks_3d[LEFT_WRIST] - landmarks_3d[LEFT_ELBOW]
-        angles['wrist_left'] = self.angle_between(wrist_vec, forearm_vec)
+        # Wrist (left)
+        # Flexion is roughly the angle of the hand relative to forearm.
+        # Since we only have wrist, we'll approximate with forearm pitch for now or 0.
+        angles['wrist_left'] = 0  # Vision model lacks hand joints unless using hands model
 
         # Legs stability (assume stable if standing)
         angles['legs_stable'] = True
+        
+        # Knee (left) - hip to knee, knee to ankle
+        thigh_vec = landmarks_3d[LEFT_KNEE] - landmarks_3d[LEFT_HIP]
+        shank_vec = landmarks_3d[LEFT_ANKLE] - landmarks_3d[LEFT_KNEE]
+        cos_knee = np.dot(thigh_vec, shank_vec) / (np.linalg.norm(thigh_vec) * np.linalg.norm(shank_vec) + 1e-6)
+        angles['knee_left'] = np.degrees(np.arccos(np.clip(cos_knee, -1.0, 1.0)))
 
-        # Optional: right side angles (mirror)
+        # Optional: right side angles
         upper_arm_vec_r = landmarks_3d[RIGHT_ELBOW] - landmarks_3d[RIGHT_SHOULDER]
-        angles['upper_arm_right'] = self.angle_between(upper_arm_vec_r, vertical)
+        arm_pitch_r, arm_roll_r = self.compute_euler(upper_arm_vec_r)
+        angles['upper_arm_right'] = arm_pitch_r
+        
         forearm_vec_r = landmarks_3d[RIGHT_WRIST] - landmarks_3d[RIGHT_ELBOW]
-        upper_rev_r = landmarks_3d[RIGHT_SHOULDER] - landmarks_3d[RIGHT_ELBOW]
-        angles['elbow_right'] = self.angle_between(forearm_vec_r, upper_rev_r)
-        angles['wrist_right'] = self.angle_between(forearm_vec_r, forearm_vec_r)  # placeholder
+        cos_r = np.dot(upper_arm_vec_r, forearm_vec_r) / (np.linalg.norm(upper_arm_vec_r) * np.linalg.norm(forearm_vec_r) + 1e-6)
+        angles['elbow_right'] = np.degrees(np.arccos(np.clip(cos_r, -1.0, 1.0)))
+        angles['wrist_right'] = 0
 
         return angles

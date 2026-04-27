@@ -6,10 +6,10 @@ from flask_socketio import emit
 
 
 class SocketEvents:
-    def __init__(self, socketio, cam_mgr, pose_est, pose_fusion,
+    def __init__(self, socketio, cam_managers, pose_est, pose_fusion,
                  skeleton, rula_calc, reba_calc, logger, app):
         self.socketio   = socketio
-        self.cam_mgr    = cam_mgr
+        self.cam_managers = cam_managers
         self.pose_est   = pose_est
         self.pose_fusion = pose_fusion
         self.skeleton   = skeleton
@@ -23,19 +23,19 @@ class SocketEvents:
         @socketio.on('connect')
         def handle_connect():
             print("[Socket] Client connected")
-            mode = getattr(self.cam_mgr, 'mode', 1)
+            mode = len(self.cam_managers)
             emit('config', {'mode': mode, 'usb3': True})
 
     # ──────────────────────────────────────────────────────────────────
     def process_loop(self):
         """
         Background thread:
-          1. Grab the latest RGB frame from CameraManager
-          2. Run MediaPipe / pose estimator
-          3. Compute skeleton angles
+          1. Grab the latest RGB frames from all CameraManagers
+          2. Run MediaPipe / pose estimator on each
+          3. Fuse landmarks and compute skeleton angles
           4. Calculate RULA + REBA with sub-score details
-          5. Read IMU (accel, gyro, euler) for anomaly detection
-          6. Emit 'pose_update' to all connected Socket.IO clients
+          5. Evaluate vision-based anomalies
+          6. Emit 'pose_update' and 'skeleton_3d' to clients
           7. Log every 0.5 s
         """
         print("[Processing] Thread started")
@@ -44,36 +44,44 @@ class SocketEvents:
 
         while self.running:
             try:
-                # ── 1. Get latest frames dict ──────────────────────────
-                frames = self.cam_mgr.get_latest_frames()
-                rgb    = frames.get('rgb') if frames else None
+                # ── 1. Get latest frames & estimate poses ──────────────────
+                all_landmarks = []
+                depth_frame = None
 
-                if rgb is None:
+                for mgr in self.cam_managers:
+                    frames = mgr.get_latest_frames()
+                    rgb    = frames.get('rgb') if frames else None
+                    if frames and frames.get('depth') is not None and depth_frame is None:
+                        # Grab depth frame from the first available camera
+                        depth_frame = frames.get('depth')
+
+                    if rgb is not None:
+                        lm = self.pose_est.get_landmarks(rgb)
+                        all_landmarks.append(lm)
+                    else:
+                        all_landmarks.append(None)
+                
+                # Check if at least one camera provided landmarks
+                if not any(lm is not None for lm in all_landmarks):
                     if self._frame_count % 60 == 0:
-                        print("[Processing] No RGB frame yet")
+                        print("[Processing] No landmarks detected from any camera")
                     time.sleep(0.05)
                     continue
 
                 self._frame_count += 1
 
-                # ── 2. Pose estimation ────────────────────────────────
-                landmarks_2d = self.pose_est.get_landmarks(rgb)
-                if landmarks_2d is None:
-                    if self._frame_count % 60 == 0:
-                        print("[Processing] No landmarks detected")
-                    time.sleep(0.05)
+                # ── 2. Fuse + compute angles ──────────────────────────
+                skeleton_3d = self.pose_fusion.fuse(all_landmarks)
+                if skeleton_3d is None:
                     continue
 
-                # ── 3. Fuse + compute angles ──────────────────────────
-                skeleton_3d = self.pose_fusion.fuse([landmarks_2d])
                 angles      = self.skeleton.compute_angles(skeleton_3d)
 
                 # Enrich depth-aware angles if depth available
-                depth_frame = frames.get('depth')
                 if depth_frame is not None and hasattr(self.skeleton, 'enrich_with_depth'):
                     angles = self.skeleton.enrich_with_depth(angles, depth_frame)
 
-                # ── 4. RULA + REBA scores with details ────────────────
+                # ── 3. RULA + REBA scores with details ────────────────
                 rula_res = self.rula_calc.compute(angles)
                 reba_res = self.reba_calc.compute(angles)
 
@@ -113,35 +121,8 @@ class SocketEvents:
                     'score_c':      reba_res.get('score_C'),
                 }
 
-                # ── 5. IMU anomaly detection ──────────────────────────
+                # ── 4. Vision-based angle anomalies ─────────────────
                 anomalies = []
-                imu_data  = {}
-                imu_mgr   = self.app.config.get('IMU_MANAGER')
-
-                if imu_mgr:
-                    raw        = imu_mgr.get_data()
-                    ax, ay, az = raw.get('accel', (0, 0, 0))
-                    gx, gy, gz = raw.get('gyro',  (0, 0, 0))
-                    euler      = raw.get('euler',  (0.0, 0.0, 0.0))
-
-                    accel_mag  = math.sqrt(ax**2 + ay**2 + az**2)
-                    gyro_speed = max(abs(gx), abs(gy), abs(gz))
-
-                    if accel_mag > 25.0:
-                        anomalies.append("Sudden jerk detected (>2.5g)")
-                    if gyro_speed > 3.14:
-                        anomalies.append("Rapid twisting motion (>180°/s)")
-                    if abs(euler[1]) > 30:
-                        anomalies.append(f"High pitch tilt: {euler[1]:.1f}°")
-
-                    imu_data = {
-                        'accel': list(raw.get('accel', (0, 0, 0))),
-                        'gyro':  list(raw.get('gyro',  (0, 0, 0))),
-                        'euler': list(euler),
-                        'rv':    list(raw.get('rotation_vector', (0, 0, 0, 1))),
-                    }
-
-                # ── 5b. Vision-based angle anomalies ─────────────────
                 neck_angle  = angles.get('neck', 0)
                 trunk_angle = angles.get('trunk', 0)
                 if abs(neck_angle) > 40:
@@ -153,7 +134,7 @@ class SocketEvents:
                 if ua_left > 90 or ua_right > 90:
                     anomalies.append("Shoulder elevated above 90°")
 
-                # ── 6. Emit Socket.IO update ──────────────────────────
+                # ── 5. Emit Socket.IO update ──────────────────────────
                 self.socketio.emit('pose_update', {
                     'angles':       angles,
                     'rula':         rula_res.get('RULA_score', 0),
@@ -162,10 +143,15 @@ class SocketEvents:
                     'anomalies':    anomalies,
                     'rula_details': rula_details,
                     'reba_details': reba_details,
-                    'imu':          imu_data,
+                    'imu':          None, # IMU disabled per user request
                 })
 
-                # ── 7. Periodic logging (0.5 s) ───────────────────────
+                if skeleton_3d is not None:
+                    self.socketio.emit('skeleton_3d', {
+                        'landmarks': skeleton_3d.tolist() if hasattr(skeleton_3d, 'tolist') else skeleton_3d
+                    })
+
+                # ── 6. Periodic logging (0.5 s) ───────────────────────
                 now = time.time()
                 if now - last_log >= 0.5:
                     try:
@@ -185,5 +171,5 @@ class SocketEvents:
                 print(f"[Processing] ERROR: {e}")
                 traceback.print_exc()
 
-            # ~10 Hz processing rate (enough for ergonomic assessment)
+            # ~10 Hz processing rate
             time.sleep(1.0 / 10)

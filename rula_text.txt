@@ -1,0 +1,303 @@
+Guide pour calculer le score RULA  
+Le RULA (Rapid Upper Limb Assessment) est une méthode d’évaluation ergonomique 
+développée pour analyser rapidement les postures du haut du corps au travail et identifier les 
+risques de troubles musculosquelettiques (TMS). Il se concentre sur les bras, les avant-bras, 
+les poignets, le cou et le tronc, en évaluant la posture, les angles articulaires, la force exercée et 
+la durée de la tâche. Le résultat permet de classer le risque sur une échelle de 1 à 7, où un 
+score élevé indique une nécessité d’action rapide pour réduire le risque.  
+I. 
+Groupe A (bras, avant-bras, poignet)  
+Le Groupe A se concentre sur le haut du bras, l’avant-bras et le poignet, ainsi que la charge 
+ou la force appliquée, pour déterminer un score partiel qui sera ensuite combiné avec le 
+groupe B (cou, tronc, jambes) pour obtenir le score final RULA.  
+1. Bras supérieur (épaule et humérus)  
+Tableau 1: Tableau de position du bras  
+Position du bras  
+Score RULA  
+Le long du corps (neutre)  
+1  
+Élévation < 20°  
+2  
+Élévation 20°–45°  
+2  
+Élévation 45°–90°  
+3  
+Élévation > 90°  
+4  
+  
+Facteurs additionnels :  
+• 
+Rotation externe ou interne prononcée → +1  
+• 
+Bras soutenu ou charge modérée → +1  
+Exemple :  
+• 
+Bras levé à 60°, rotation normale, pas de support → score = 3  
+• 
+Avec un outil léger → +1 → score final bras = 4  
+
+
+2. Avant-bras (angle coude)  
+Tableau 2: Tableau du coude  
+Angle du coude  
+Score RULA  
+60°–100°  
+1  
+< 60° ou > 100°  
+2  
+  
+3. Poignet (flexion/extension et déviation)  
+Tableau 3: Tableau du flexion/extension du poignet  
+Angle du poignet  
+Score RULA  
+0°–15° (neutre)  
+1  
+15°–30°  
+2  
+>30°  
+3  
+  
+Tableau 4: Tableau du déviation radiale/ulnaire du poignet  
+Déviation du poignet  
+Score additionnel  
+Aucune  
+0  
+Légère  
+1  
+Prononcée  
+2  
+Exemple :  
+• 
+Poignet à 20° flexion → 2  
+• 
+Légère déviation → +1 → total poignet = 3  
+  
+4. Charge et force appliquée  
+Tableau 5: Tableau de Charge et force appliquée  
+Effort / Charge  
+Score additionnel  
+Léger / pas de force  
+0  
+Charge moyenne / effort répété  
+1  
+Charge lourde / effort fort / posture prolongée  
+2  
+
+
+Exemple :  
+• 
+Porter 2 kg → +0  
+• 
+Porter 10 kg → +2  
+5. Combinaison des scores pour le Groupe A  
+Étapes :  
+1. Noter les scores :  
+2. Utiliser la table du Groupe A pour combiner bras + avant-bras → score intermédiaire.  
+3. Ajouter le score du poignet + charge → score final du Groupe A.  
+Tableau 6 : Tableau du Groupe A pour calcul du score final : 
+Bras supérieur  
+\ Avant-bras  
+Poignet+twist 1  Poignet+twist 2  Poignet+twist 3  Poignet+twist 4  
+1,1  
+1  
+2  
+2  
+3  
+1,2  
+2  
+2  
+3  
+3  
+2,1  
+2  
+3  
+3  
+3  
+2,2  
+3  
+3  
+4  
+4  
+3,1  
+3  
+3  
+4  
+4  
+3,2  
+4  
+4  
+5  
+5  
+4,1  
+4  
+4  
+5  
+5  
+4,2  
+5  
+5  
+6  
+6  
+Exemple :  
+• 
+Bras = 3, Avant-bras = 1 → combine → ligne 3,1  
+• 
+Poignet/Torsion = 2 → colonne 2  
+→ Score final Groupe A = 3  
+ Ce score est le résultat officiel que donne le tableau RULA, pas une simple addition.  
+ 
+
+
+II. 
+Groupe B (le cou, le tronc (dos et bassin), les jambes (stabilité, appui 
+des pieds))  
+Le Groupe B correspond à l’évaluation des postures du cou, du tronc et des jambes. Il permet 
+d’analyser la position générale du corps et la stabilité de la posture, afin d’identifier les risques 
+de troubles musculosquelettiques (TMS) liés à ces parties du corps. 
+1.   
+Cou 
+Évalue la flexion, l’extension, la rotation ou l’inclinaison du cou. 
+Position du cou 
+Score 
+0° – 10° 
+1 
+10° – 20° 
+2 
+>20° 
+3 
+Extension 
+4 
+Facteurs additionnels : 
+• 
+Rotation → +1 
+• 
+Inclinaison latérale → +1 
+2.   
+Tronc 
+Analyse la posture du dos et du bassin 
+Position du tronc 
+Score 
+Droit 
+1 
+Flexion 0–20° 
+2 
+Flexion 20–60° 
+3 
+Flexion >60° 
+4 
+Extension 
+2 
+
+
+Facteurs additionnels : 
+• 
+Rotation → +1 
+• 
+Inclinaison latérale → +1 
+3.   
+Jambes 
+Évalue la stabilité de la posture : 
+• 
+Position stable (assis ou debout équilibré) 
+• 
+Position instable ou déséquilibrée 
+Position des jambes 
+Score 
+Position stable 
+1 
+Position instable 
+2 
+Cette partie inclut indirectement les genoux, les chevilles et l’appui des pieds. 
+4. 
+Combinaison du Groupe B : 
+➢ Combiner cou + tronc dans le tableau B 
+➢ Ajouter le score des jambes 
+Cou/Tronc 
+1 
+2 
+3 
+4 
+5 
+6 
+1 
+1 
+2 
+3 
+5 
+6 
+7 
+2 
+2 
+2 
+3 
+5 
+6 
+7 
+3 
+3 
+3 
+4 
+6 
+7 
+7 
+4 
+5 
+5 
+6 
+7 
+7 
+7 
+5 
+6 
+6 
+7 
+7 
+7 
+7 
+6 
+7 
+7 
+7 
+7 
+7 
+7 
+ 
+
+
+Exemple : 
+ Dans le tableau : Cou= 3 / Tronc= 4 → Score = 6 
+1. Ajouter jambes +1 
+➡ Score final Groupe B = 7 
+III. 
+Calcul du score final RULA 
+Les scores : 
+• Groupe A 
+• Groupe B 
+Sont combinés dans le tableau final RULA pour obtenir le score final (1 à 7). 
+Interprétation du score RULA 
+Score 
+Niveau de risque 
+Action  
+1-2 
+Acceptable 
+Pas d’action 
+3-4 
+Faible 
+Surveillance 
+5-6 
+Moyen 
+Changement nécessaire 
+7 
+Très élevé 
+Action immédiate 
+ 
+ 
+ 
+ 
+ 
+
+
+  
+  
+
+

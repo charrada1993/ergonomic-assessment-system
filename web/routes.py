@@ -42,13 +42,11 @@ def create_app():
     @app.route('/api/config')
     def api_config():
         mode     = app.config.get('CAMERA_MODE', 0)
-        imu_mgr  = app.config.get('IMU_MANAGER')
-        imu_data = imu_mgr.get_data() if imu_mgr else {}
         return jsonify({
             'mode':    mode,
             'usb3':    True,
-            'imu':     imu_data.get('timestamp', 0) > 0,
-            'has_rv':  getattr(imu_mgr, '_has_rotation_vector', False) if imu_mgr else False,
+            'imu':     False,
+            'has_rv':  False,
         })
 
     # ─── RGB MJPEG stream ─────────────────────────────────────────────

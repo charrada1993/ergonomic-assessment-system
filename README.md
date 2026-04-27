@@ -1,13 +1,12 @@
 # Ergonomic Assessment System
 
-Real‑time human posture analysis using OAK‑D Lite camera + IMU, RULA/REBA scoring, and web dashboard. Runs on NVIDIA Orin (Ubuntu).
+Real‑time multi-view human posture analysis using 1-3 OAK‑D Lite cameras, RULA/REBA scoring, and web dashboard. Runs on NVIDIA Orin (Ubuntu).
 
 ## Features
 - Auto‑detect 1–3 OAK‑D Lite cameras
-- MediaPipe pose estimation + skeleton angles
+- Pure vision-based MediaPipe pose estimation + skeleton angles
 - RULA & REBA scoring (exact table implementation)
-- IMU (accelerometer/gyroscope) integration for movement risk
-- Live web dashboard with video feed and real‑time charts
+- Live web dashboard with 3D multi-view reconstruction, video feed, and real‑time charts
 - Data logging to CSV and automated PDF report generation
 
 ## Requirements

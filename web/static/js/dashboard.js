@@ -150,31 +150,6 @@ const scoreChart = new Chart(scoreCtx, {
   },
 });
 
-// ══════════════════════════════════════════════════════════
-//  3. IMU Accelerometer chart
-// ══════════════════════════════════════════════════════════
-const imuCtx = document.getElementById('imuChart').getContext('2d');
-const imuChart = new Chart(imuCtx, {
-  type: 'line',
-  data: {
-    labels: [],
-    datasets: [
-      ds('Accel X', C.imuAx, false),
-      ds('Accel Y', C.imuAy, false),
-      ds('Accel Z', C.imuAz, false),
-    ],
-  },
-  options: {
-    ...baseLineOptions('Acceleration (m/s²)'),
-    plugins: {
-      ...baseLineOptions().plugins,
-      legend: {
-        display: true,
-        labels: { color: '#6b7a99', font: { size: 11 }, boxWidth: 12, padding: 16 },
-      },
-    },
-  },
-});
 
 // ══════════════════════════════════════════════════════════
 //  4. Per-body-part sparkline charts (small, per joint)
@@ -188,7 +163,6 @@ const imuChart = new Chart(imuCtx, {
 const chartPanels = {
   angles: document.getElementById('angleChart').closest('.card'),
   scores: document.getElementById('scoreTrendPanel'),
-  imu:    document.getElementById('imuTrendPanel'),
 };
 
 document.getElementById('chartTabs').addEventListener('click', (e) => {
@@ -294,19 +268,6 @@ socket.on('pose_update', (data) => {
   // ── 5. RULA/REBA chart ──
   pushRolling(scoreChart, ts, +(data.rula || 0), +(data.reba || 0));
 
-  // ── 6. IMU data (if sent) ──
-  if (data.imu) {
-    const imu = data.imu;
-    const [ax, ay, az] = imu.accel || [0, 0, 0];
-    const [gx, gy, gz] = imu.gyro  || [0, 0, 0];
-    const [roll, pitch, yaw] = imu.euler || [0, 0, 0];
-
-    setText('imu-ax', ax.toFixed(2)); setText('imu-ay', ay.toFixed(2)); setText('imu-az', az.toFixed(2));
-    setText('imu-gx', gx.toFixed(2)); setText('imu-gy', gy.toFixed(2)); setText('imu-gz', gz.toFixed(2));
-    setText('imu-roll', roll.toFixed(1)); setText('imu-pitch', pitch.toFixed(1)); setText('imu-yaw', yaw.toFixed(1));
-
-    pushRolling(imuChart, ts, ax, ay, az);
-  }
 
   // ── 7. Anomaly feed ──
   const feed = document.getElementById('anomalyFeed');
@@ -324,10 +285,15 @@ socket.on('pose_update', (data) => {
 //  Socket.IO — config
 // ══════════════════════════════════════════════════════════
 socket.on('config', (cfg) => {
-  const modeMap = { 1: 'Single-view (2D)', 2: 'Dual-view', 3: 'Multi-view 3D' };
-  setText('sysMode', modeMap[cfg.mode] || 'Unknown');
-  setText('camStatus', 'Active');
-  setText('imuStatus', 'BNO086 Active');
+  const modeMap = { 1: 'Single-view', 2: 'Dual-view Fusion', 3: 'Multi-view 3D' };
+  const mode = modeMap[cfg.mode] || 'Unknown';
+  setText('sysMode', mode);
+  setText('camStatus', 'Active (' + cfg.mode + ' cam' + (cfg.mode > 1 ? 's' : '') + ')');
+  // Camera info panel
+  setText('camModeBadge', mode);
+  setText('camInfoCount', cfg.mode);
+  // Page header live mode label
+  setText('headerCamMode', mode + ' mode');
   document.getElementById('liveStatus').style.display = 'flex';
 });
 
@@ -361,10 +327,10 @@ function setJR(id, angle) {
 //  Theme toggle (persisted)
 // ══════════════════════════════════════════════════════════
 const themeBtn = document.getElementById('themeBtn');
-function applyTheme(dark) {
-  document.body.classList.toggle('dark', dark);
-  themeBtn.textContent = dark ? '☀️' : '🌙';
-  localStorage.setItem('ergo-theme', dark ? 'dark' : 'light');
+function applyTheme(isLight) {
+  document.body.classList.toggle('light-mode', isLight);
+  themeBtn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  localStorage.setItem('ergo-theme', isLight ? 'light' : 'dark');
 }
-themeBtn.addEventListener('click', () => applyTheme(!document.body.classList.contains('dark')));
-applyTheme(localStorage.getItem('ergo-theme') === 'dark');
+themeBtn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light-mode')));
+applyTheme(localStorage.getItem('ergo-theme') === 'light');

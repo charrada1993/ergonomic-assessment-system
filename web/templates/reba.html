@@ -1,389 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErgoVision | REBA Analysis</title>
   <meta name="description" content="REBA - Rapid Entire Body Assessment real-time scores and sub-scores">
   <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
 
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="logo-icon">⬡</span>
-    <span class="logo">ErgoVision</span>
-    <span class="badge-pill">REBA</span>
-  </div>
-  <div class="nav-links">
-    <a href="/"><span>📊</span><span>Dashboard</span></a>
-    <a href="/camera"><span>📷</span><span>Live Feed</span></a>
-    <a href="/rula"><span>🦾</span><span>RULA</span></a>
-    <a href="/reba" class="active"><span>🧍</span><span>REBA</span></a>
-  </div>
-  <div class="nav-right">
-    <div class="live-dot">LIVE</div>
-    <button class="theme-btn" id="themeBtn">🌙</button>
-  </div>
-</nav>
-
-<main class="container">
-
-  <div class="page-header">
-    <h1 class="page-title">🧍 REBA Assessment</h1>
-    <p class="page-sub">Rapid Entire Body Assessment — full-body ergonomic risk scoring</p>
-  </div>
-
-  <!-- ── Top metric strip ── -->
-  <div class="metrics-row" style="margin-bottom:1.5rem">
-    <div class="card metric-card" style="--accent:var(--purple)">
-      <div class="metric-label"><span class="mi">📊</span> Final REBA Score</div>
-      <div class="metric-value" id="rebaFinal">--</div>
-      <div><span class="risk-chip" id="rebaRiskChip">Waiting</span></div>
-      <div class="metric-bar"><div class="metric-bar-fill" id="rebaFinalBar" style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></div></div>
-      <div class="metric-sub">Scale: 1 (safe) → 15 (hazardous)</div>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="logo-icon"><i class="fas fa-heartbeat"></i></span>
+      <span class="logo">ErgoVision</span>
+      <span class="badge-pill">REBA</span>
     </div>
-    <div class="card metric-card" style="--accent:var(--cyan)">
-      <div class="metric-label"><span class="mi">💪</span> Table A Score</div>
-      <div class="metric-value" id="reba-tableA">--</div>
-      <div class="metric-sub">Trunk + Neck + Legs</div>
+    <div class="nav-links">
+      <a href="/"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+      <a href="/camera"><i class="fas fa-video"></i><span>Live Feed</span></a>
+      <a href="/rula"><i class="fas fa-person-rays"></i><span>RULA</span></a>
+      <a href="/reba" class="active"><i class="fas fa-person"></i><span>REBA</span></a>
+      <a href="/3d"><i class="fas fa-cube"></i><span>3D View</span></a>
     </div>
-    <div class="card metric-card" style="--accent:var(--green)">
-      <div class="metric-label"><span class="mi">🦾</span> Table B Score</div>
-      <div class="metric-value" id="reba-tableB">--</div>
-      <div class="metric-sub">Upper arm + Lower arm + Wrist</div>
+    <div class="nav-right">
+      <div class="live-dot">LIVE</div>
+      <button class="theme-btn" id="themeBtn">🌙</button>
     </div>
-    <div class="card metric-card" style="--accent:var(--yellow)">
-      <div class="metric-label"><span class="mi">⚡</span> Score C</div>
-      <div class="metric-value" id="reba-scoreC">--</div>
-      <div class="metric-sub">A×B combined lookup</div>
-    </div>
-    <div class="card metric-card" style="--accent:var(--orange)">
-      <div class="metric-label"><span class="mi">🏋️</span> Load / Force</div>
-      <div class="metric-value" id="reba-load">--</div>
-      <div class="metric-sub">0=&lt;5kg · 1=5-10kg · 2=&gt;10kg</div>
-    </div>
-  </div>
+  </nav>
 
-  <!-- ── Sub-score breakdown ── -->
-  <div class="assessment-grid">
+  <main class="container">
 
-    <!-- Table A: Trunk, Neck, Legs -->
-    <div class="card group-card">
-      <div class="group-title" style="color:var(--cyan)">Table A — Trunk, Neck &amp; Legs</div>
-      <div class="sub-score-list">
-        <div class="sub-score">
-          <span class="ss-label">Trunk Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-trunk" style="background:var(--col-trunk);width:0%"></div></div>
-          <span class="ss-score" id="sc-trunk" style="color:var(--col-trunk)">--</span>
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-child"></i> REBA Assessment</h1>
+      <p class="page-sub">Rapid Entire Body Assessment — full-body ergonomic risk scoring</p>
+    </div>
+
+    <!-- ── Top metric strip ── -->
+    <div class="metrics-row" style="margin-bottom:1.5rem">
+      <div class="card metric-card" style="--accent:var(--purple)">
+        <div class="metric-label"><span class="mi"></span> Final REBA Score</div>
+        <div class="metric-value" id="rebaFinal">--</div>
+        <div><span class="risk-chip" id="rebaRiskChip">Waiting</span></div>
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="rebaFinalBar"
+            style="background:var(--purple);box-shadow:0 0 8px var(--purple)"></div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Trunk Twist / Side-bend</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-trunk-mod" style="background:var(--cyan);width:0%"></div></div>
-          <span class="ss-score" id="sc-trunk-mod" style="color:var(--cyan)">--</span>
+        <div class="metric-sub">Scale: 1 (safe) → 15 (hazardous)</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--cyan)">
+        <div class="metric-label"><span class="mi"></span> Table A Score</div>
+        <div class="metric-value" id="reba-tableA">--</div>
+        <div class="metric-sub">Trunk + Neck + Legs</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--green)">
+        <div class="metric-label"><span class="mi"></span> Table B Score</div>
+        <div class="metric-value" id="reba-tableB">--</div>
+        <div class="metric-sub">Upper arm + Lower arm + Wrist</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--yellow)">
+        <div class="metric-label"><span class="mi"></span> Score C</div>
+        <div class="metric-value" id="reba-scoreC">--</div>
+        <div class="metric-sub">A×B combined lookup</div>
+      </div>
+      <div class="card metric-card" style="--accent:var(--orange)">
+        <div class="metric-label"><span class="mi"></span> Load / Force</div>
+        <div class="metric-value" id="reba-load">--</div>
+        <div class="metric-sub">0=&lt;5kg · 1=5-10kg · 2=&gt;10kg</div>
+      </div>
+    </div>
+
+    <!-- ── Sub-score breakdown ── -->
+    <div class="assessment-grid">
+
+      <!-- Table A: Trunk, Neck, Legs -->
+      <div class="card group-card">
+        <div class="group-title" style="color:var(--cyan)">Table A — Trunk, Neck &amp; Legs</div>
+        <div class="sub-score-list">
+          <div class="sub-score">
+            <span class="ss-label">Trunk Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-trunk" style="background:var(--col-trunk);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-trunk" style="color:var(--col-trunk)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Trunk Twist / Side-bend</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-trunk-mod" style="background:var(--cyan);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-trunk-mod" style="color:var(--cyan)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Neck Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-neck" style="background:var(--col-neck);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-neck" style="color:var(--col-neck)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Neck Twist / Side-bend</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-neck-mod" style="background:var(--red);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-neck-mod" style="color:var(--red)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Leg Support</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-legs" style="background:var(--col-knee);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-legs" style="color:var(--col-knee)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Knee Angle (Leg Mod)</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-knee-mod" style="background:var(--col-ankle);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-knee-mod" style="color:var(--col-ankle)">--</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Neck Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-neck" style="background:var(--col-neck);width:0%"></div></div>
-          <span class="ss-score" id="sc-neck" style="color:var(--col-neck)">--</span>
+      </div>
+
+      <!-- Table B: Upper arm, Lower arm, Wrist -->
+      <div class="card group-card">
+        <div class="group-title" style="color:var(--green)">Table B — Upper Arm, Forearm &amp; Wrist</div>
+        <div class="sub-score-list">
+          <div class="sub-score">
+            <span class="ss-label">Upper Arm Elevation</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-upper-arm" style="background:var(--col-arm-l);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-upper-arm" style="color:var(--col-arm-l)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Shoulder Raise / Abduction</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-shoulder-mod" style="background:var(--col-arm-r);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-shoulder-mod" style="color:var(--col-arm-r)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Lower Arm (Forearm)</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-lower-arm" style="background:var(--col-forearm);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-lower-arm" style="color:var(--col-forearm)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Wrist Flexion</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-wrist" style="background:var(--col-wrist);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-wrist" style="color:var(--col-wrist)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Wrist Twist</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-wrist-twist" style="background:var(--orange);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-wrist-twist" style="color:var(--orange)">--</span>
+          </div>
+          <div class="sub-score">
+            <span class="ss-label">Coupling / Grip</span>
+            <div class="ss-bar">
+              <div class="ss-fill" id="bar-coupling" style="background:var(--yellow);width:0%"></div>
+            </div>
+            <span class="ss-score" id="sc-coupling" style="color:var(--yellow)">--</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Neck Twist / Side-bend</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-neck-mod" style="background:var(--red);width:0%"></div></div>
-          <span class="ss-score" id="sc-neck-mod" style="color:var(--red)">--</span>
+      </div>
+
+    </div>
+
+    <!-- ── Live Camera & Final Score ── -->
+    <div class="assessment-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-bottom: 1.25rem; margin-top: 1.25rem;">
+      <!-- RGB video feed -->
+      <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+        <div class="panel-header" style="padding: 1rem; border-bottom: 1px solid var(--border);">
+          <div class="panel-title"><i class="fas fa-video" style="color:var(--cyan)"></i> Live Assessment View</div>
+          <div style="display:flex;gap:0.6rem;align-items:center">
+             <span style="font-size: 0.7rem; color: var(--green);">●</span><span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">RGB</span>
+          </div>
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Leg Support</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-legs" style="background:var(--col-knee);width:0%"></div></div>
-          <span class="ss-score" id="sc-legs" style="color:var(--col-knee)">--</span>
+        <div style="position: relative; width: 100%; background: #000; flex: 1; display: flex; justify-content: center; align-items: center; min-height: 240px;">
+          <img id="videoFeed" src="/video_feed" alt="Live RGB Camera Feed" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <div class="sub-score">
-          <span class="ss-label">Knee Angle (Leg Mod)</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-knee-mod" style="background:var(--col-ankle);width:0%"></div></div>
-          <span class="ss-score" id="sc-knee-mod" style="color:var(--col-ankle)">--</span>
+      </div>
+
+      <!-- Final score card -->
+      <div class="card final-score-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center;">
+        <div class="final-score-num" id="rebaFinalBig">--</div>
+        <div class="final-score-label">REBA Final Score</div>
+        <div style="margin-top:0.75rem"><span class="risk-chip" id="rebaActionChip">Waiting…</span></div>
+        <div class="action-text" id="rebaActionText">
+          Stand in front of the camera. Real-time REBA assessment will begin automatically.
         </div>
       </div>
     </div>
 
-    <!-- Table B: Upper arm, Lower arm, Wrist -->
-    <div class="card group-card">
-      <div class="group-title" style="color:var(--green)">Table B — Upper Arm, Forearm &amp; Wrist</div>
-      <div class="sub-score-list">
-        <div class="sub-score">
-          <span class="ss-label">Upper Arm Elevation</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-upper-arm" style="background:var(--col-arm-l);width:0%"></div></div>
-          <span class="ss-score" id="sc-upper-arm" style="color:var(--col-arm-l)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Shoulder Raise / Abduction</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-shoulder-mod" style="background:var(--col-arm-r);width:0%"></div></div>
-          <span class="ss-score" id="sc-shoulder-mod" style="color:var(--col-arm-r)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Lower Arm (Forearm)</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-lower-arm" style="background:var(--col-forearm);width:0%"></div></div>
-          <span class="ss-score" id="sc-lower-arm" style="color:var(--col-forearm)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Wrist Flexion</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-wrist" style="background:var(--col-wrist);width:0%"></div></div>
-          <span class="ss-score" id="sc-wrist" style="color:var(--col-wrist)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Wrist Twist</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-wrist-twist" style="background:var(--orange);width:0%"></div></div>
-          <span class="ss-score" id="sc-wrist-twist" style="color:var(--orange)">--</span>
-        </div>
-        <div class="sub-score">
-          <span class="ss-label">Coupling / Grip</span>
-          <div class="ss-bar"><div class="ss-fill" id="bar-coupling" style="background:var(--yellow);width:0%"></div></div>
-          <span class="ss-score" id="sc-coupling" style="color:var(--yellow)">--</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Final score card ── -->
-  <div class="card final-score-card" style="margin:1.25rem 0">
-    <div class="final-score-num" id="rebaFinalBig">--</div>
-    <div class="final-score-label">REBA Final Score</div>
-    <div style="margin-top:0.75rem"><span class="risk-chip" id="rebaActionChip">Waiting…</span></div>
-    <div class="action-text" id="rebaActionText">
-      Stand in front of the camera. Real-time REBA assessment will begin automatically.
-    </div>
-  </div>
-
-  <!-- ── REBA history chart ── -->
-  <div class="card chart-panel" style="margin-bottom:1.25rem">
-    <div class="panel-header">
-      <div class="panel-title"><span class="pt-icon">📈</span> REBA Score History</div>
-      <div style="display:flex;gap:1rem;font-size:0.72rem;color:var(--text-muted)">
-        <span style="color:var(--purple)">━ REBA</span>
-        <span style="color:var(--cyan)">━ Table A</span>
-        <span style="color:var(--green)">━ Table B</span>
-      </div>
-    </div>
-    <canvas id="rebaChart" height="80"></canvas>
-  </div>
-
-  <!-- ── Per-body-part angle mini charts ── -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.25rem">
-
-    <div class="card chart-panel">
+    <!-- ── REBA history chart ── -->
+    <div class="card chart-panel" style="margin-bottom:1.25rem">
       <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-trunk)">●</span> Trunk Angle</div>
+        <div class="panel-title"><span class="pt-icon"></span> REBA Score History</div>
+        <div style="display:flex;gap:1rem;font-size:0.72rem;color:var(--text-muted)">
+          <span style="color:var(--purple)">━ REBA</span>
+          <span style="color:var(--cyan)">━ Table A</span>
+          <span style="color:var(--green)">━ Table B</span>
+        </div>
       </div>
-      <canvas id="chartTrunk" height="80"></canvas>
+      <canvas id="rebaChart" height="80"></canvas>
     </div>
 
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-neck)">●</span> Neck Angle</div>
+    <!-- ── Per-body-part angle mini charts ── -->
+    <div
+      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-bottom:1.25rem">
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-trunk)">●</span> Trunk Angle</div>
+        </div>
+        <canvas id="chartTrunk" height="80"></canvas>
       </div>
-      <canvas id="chartNeck" height="80"></canvas>
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-neck)">●</span> Neck Angle</div>
+        </div>
+        <canvas id="chartNeck" height="80"></canvas>
+      </div>
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-arm-l)">●</span> Upper Arm Elevation</div>
+        </div>
+        <canvas id="chartArm" height="80"></canvas>
+      </div>
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-knee)">●</span> Knee Flexion</div>
+        </div>
+        <canvas id="chartKnee" height="80"></canvas>
+      </div>
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-forearm)">●</span> Forearm Angle</div>
+        </div>
+        <canvas id="chartForearm" height="80"></canvas>
+      </div>
+
+      <div class="card chart-panel">
+        <div class="panel-header">
+          <div class="panel-title"><span style="color:var(--col-wrist)">●</span> Wrist Flexion</div>
+        </div>
+        <canvas id="chartWrist" height="80"></canvas>
+      </div>
+
     </div>
 
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-arm-l)">●</span> Upper Arm Elevation</div>
-      </div>
-      <canvas id="chartArm" height="80"></canvas>
-    </div>
+  </main>
 
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-knee)">●</span> Knee Flexion</div>
-      </div>
-      <canvas id="chartKnee" height="80"></canvas>
-    </div>
+  <script>
+    const socket = io();
+    const MAX = 60;
+    function ts() { return new Date().toLocaleTimeString('en-GB', { hour12: false }); }
 
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-forearm)">●</span> Forearm Angle</div>
-      </div>
-      <canvas id="chartForearm" height="80"></canvas>
-    </div>
-
-    <div class="card chart-panel">
-      <div class="panel-header">
-        <div class="panel-title"><span style="color:var(--col-wrist)">●</span> Wrist Flexion</div>
-      </div>
-      <canvas id="chartWrist" height="80"></canvas>
-    </div>
-
-  </div>
-
-</main>
-
-<script>
-const socket = io();
-const MAX = 60;
-function ts() { return new Date().toLocaleTimeString('en-GB', { hour12: false }); }
-
-function mkChart(id, colour, label) {
-  return new Chart(document.getElementById(id).getContext('2d'), {
-    type: 'line',
-    data: { labels: [], datasets: [{
-      label, data: [],
-      borderColor: colour, backgroundColor: colour + '22',
-      borderWidth: 2, pointRadius: 0, tension: 0.38, fill: true
-    }]},
-    options: {
-      responsive:true, maintainAspectRatio:true, animation:false,
-      scales: {
-        x: { ticks:{color:'#6b7a99',maxTicksLimit:6,font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'} },
-        y: { beginAtZero:true, ticks:{color:'#6b7a99',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} }
-      },
-      plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#111827',titleColor:'#e8edf5',bodyColor:'#6b7a99'} }
+    function mkChart(id, colour, label) {
+      return new Chart(document.getElementById(id).getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: [], datasets: [{
+            label, data: [],
+            borderColor: colour, backgroundColor: colour + '22',
+            borderWidth: 2, pointRadius: 0, tension: 0.38, fill: true
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true, animation: false,
+          scales: {
+            x: { ticks: { color: '#6b7a99', maxTicksLimit: 6, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { beginAtZero: true, ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          },
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', titleColor: '#e8edf5', bodyColor: '#6b7a99' } }
+        }
+      });
     }
-  });
-}
 
-function push(chart, val) {
-  chart.data.labels.push(ts());
-  chart.data.datasets[0].data.push(val);
-  if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
-  chart.update('none');
-}
+    function push(chart, val) {
+      chart.data.labels.push(ts());
+      chart.data.datasets[0].data.push(val);
+      if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
+      chart.update('none');
+    }
 
-// REBA multi-line history
-const rebaHistCtx = document.getElementById('rebaChart').getContext('2d');
-const rebaHistChart = new Chart(rebaHistCtx, {
-  type:'line',
-  data:{
-    labels:[],
-    datasets:[
-      {label:'REBA', data:[], borderColor:'#9b59ff', backgroundColor:'#9b59ff18', borderWidth:2.5, pointRadius:0, tension:0.35, fill:true},
-      {label:'Table A', data:[], borderColor:'#00d4ff', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0.35, fill:false},
-      {label:'Table B', data:[], borderColor:'#00e5a0', backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0.35, fill:false, borderDash:[4,4]},
-    ]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:true, animation:false,
-    scales:{
-      x:{ticks:{color:'#6b7a99',maxTicksLimit:8,font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
-      y:{beginAtZero:true, max:16, ticks:{color:'#6b7a99',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'}}
-    },
-    plugins:{
-      legend:{display:true, labels:{color:'#6b7a99',font:{size:10},boxWidth:10,padding:14}},
-      tooltip:{backgroundColor:'#111827',titleColor:'#e8edf5',bodyColor:'#6b7a99'}
-    },
-    interaction:{mode:'index',intersect:false}
-  }
-});
+    // REBA multi-line history
+    const rebaHistCtx = document.getElementById('rebaChart').getContext('2d');
+    const rebaHistChart = new Chart(rebaHistCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'REBA', data: [], borderColor: '#9b59ff', backgroundColor: '#9b59ff18', borderWidth: 2.5, pointRadius: 0, tension: 0.35, fill: true },
+          { label: 'Table A', data: [], borderColor: '#00d4ff', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.35, fill: false },
+          { label: 'Table B', data: [], borderColor: '#00e5a0', backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0.35, fill: false, borderDash: [4, 4] },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true, animation: false,
+        scales: {
+          x: { ticks: { color: '#6b7a99', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { beginAtZero: true, max: 16, ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        },
+        plugins: {
+          legend: { display: true, labels: { color: '#6b7a99', font: { size: 10 }, boxWidth: 10, padding: 14 } },
+          tooltip: { backgroundColor: '#111827', titleColor: '#e8edf5', bodyColor: '#6b7a99' }
+        },
+        interaction: { mode: 'index', intersect: false }
+      }
+    });
 
-// Per-body-part mini charts
-const cTrunk   = mkChart('chartTrunk',   '#00d4ff', 'Trunk °');
-const cNeck    = mkChart('chartNeck',    '#ff4d6d', 'Neck °');
-const cArm     = mkChart('chartArm',     '#00e5a0', 'Upper Arm °');
-const cKnee    = mkChart('chartKnee',    '#e85d9b', 'Knee °');
-const cForearm = mkChart('chartForearm', '#ffc94d', 'Forearm °');
-const cWrist   = mkChart('chartWrist',   '#ff7c3e', 'Wrist °');
+    // Per-body-part mini charts
+    const cTrunk = mkChart('chartTrunk', '#00d4ff', 'Trunk °');
+    const cNeck = mkChart('chartNeck', '#ff4d6d', 'Neck °');
+    const cArm = mkChart('chartArm', '#00e5a0', 'Upper Arm °');
+    const cKnee = mkChart('chartKnee', '#e85d9b', 'Knee °');
+    const cForearm = mkChart('chartForearm', '#ffc94d', 'Forearm °');
+    const cWrist = mkChart('chartWrist', '#ff7c3e', 'Wrist °');
 
-const ACTIONS = [
-  '',
-  '1: Negligible risk. No action required.',
-  '2–3: Low risk. Change may be needed.',
-  '2–3: Low risk. Change may be needed.',
-  '4–7: Medium risk. Further investigation, change soon.',
-  '4–7: Medium risk. Further investigation, change soon.',
-  '4–7: Medium risk. Further investigation, change soon.',
-  '4–7: Medium risk. Further investigation, change soon.',
-  '8–10: High risk. Investigate and implement changes.',
-  '8–10: High risk. Investigate and implement changes.',
-  '8–10: High risk. Investigate and implement changes.',
-  '11+: Very high risk. Implement changes immediately!',
-  '11+: Very high risk. Implement changes immediately!',
-  '11+: Very high risk. Implement changes immediately!',
-  '11+: Very high risk. Implement changes immediately!',
-  '15: Maximum risk — immediate action required!',
-];
+    const ACTIONS = [
+      '',
+      '1: Negligible risk. No action required.',
+      '2–3: Low risk. Change may be needed.',
+      '2–3: Low risk. Change may be needed.',
+      '4–7: Medium risk. Further investigation, change soon.',
+      '4–7: Medium risk. Further investigation, change soon.',
+      '4–7: Medium risk. Further investigation, change soon.',
+      '4–7: Medium risk. Further investigation, change soon.',
+      '8–10: High risk. Investigate and implement changes.',
+      '8–10: High risk. Investigate and implement changes.',
+      '8–10: High risk. Investigate and implement changes.',
+      '11+: Very high risk. Implement changes immediately!',
+      '11+: Very high risk. Implement changes immediately!',
+      '11+: Very high risk. Implement changes immediately!',
+      '11+: Very high risk. Implement changes immediately!',
+      '15: Maximum risk — immediate action required!',
+    ];
 
-function setText(id, v){ const e=document.getElementById(id); if(e) e.textContent=v; }
-function setBar(id, val, max){ const e=document.getElementById(id); if(e) e.style.width=Math.min((val/max)*100,100)+'%'; }
-function classRisk(r){
-  r=(r||'').toLowerCase();
-  if(r.includes('high')||r.includes('critical')||r.includes('élevé')) return 'high';
-  if(r.includes('medium')||r.includes('moyen')) return 'medium';
-  return 'low';
-}
+    function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+    function setBar(id, val, max) { const e = document.getElementById(id); if (e) e.style.width = Math.min((val / max) * 100, 100) + '%'; }
+    function classRisk(r) {
+      r = (r || '').toLowerCase();
+      if (r.includes('high') || r.includes('critical') || r.includes('élevé')) return 'high';
+      if (r.includes('medium') || r.includes('moyen')) return 'medium';
+      return 'low';
+    }
 
-socket.on('pose_update', (data) => {
-  const reba = data.reba || 0;
-  const a    = data.angles || {};
-  const d    = data.reba_details || {};
-  const rc   = classRisk(data.risk_level);
+    socket.on('pose_update', (data) => {
+      const reba = data.reba || 0;
+      const a = data.angles || {};
+      const d = data.reba_details || {};
+      const rc = classRisk(data.risk_level);
 
-  // Metric cards
-  setText('rebaFinal',    reba);
-  setText('rebaFinalBig', reba);
-  setText('reba-tableA',  d.table_a || '--');
-  setText('reba-tableB',  d.table_b || '--');
-  setText('reba-scoreC',  d.score_c || '--');
-  setText('reba-load',    d.load    || '0');
+      // Metric cards
+      setText('rebaFinal', reba);
+      setText('rebaFinalBig', reba);
+      setText('reba-tableA', d.table_a || '--');
+      setText('reba-tableB', d.table_b || '--');
+      setText('reba-scoreC', d.score_c || '--');
+      setText('reba-load', d.load || '0');
 
-  setBar('rebaFinalBar', reba, 15);
+      setBar('rebaFinalBar', reba, 15);
 
-  // Risk chips
-  const rc2 = classRisk(data.risk_level);
-  ['rebaRiskChip','rebaActionChip'].forEach(id => {
-    document.getElementById(id).textContent = data.risk_level || 'Low';
-    document.getElementById(id).className   = 'risk-chip ' + rc2;
-  });
+      // Risk chips
+      const rc2 = classRisk(data.risk_level);
+      ['rebaRiskChip', 'rebaActionChip'].forEach(id => {
+        document.getElementById(id).textContent = data.risk_level || 'Low';
+        document.getElementById(id).className = 'risk-chip ' + rc2;
+      });
 
-  // Action text
-  setText('rebaActionText', ACTIONS[Math.min(reba, 15)] || '');
+      // Action text
+      setText('rebaActionText', ACTIONS[Math.min(reba, 15)] || '');
 
-  // Sub-scores — Table A
-  const tA = [
-    ['trunk',       d.trunk,       5],
-    ['trunk-mod',   d.trunk_mod,   1],
-    ['neck',        d.neck,        3],
-    ['neck-mod',    d.neck_mod,    1],
-    ['legs',        d.legs,        2],
-    ['knee-mod',    d.knee_mod,    2],
-  ];
-  tA.forEach(([k,v,m])=>{ setText('sc-'+k, v??'--'); setBar('bar-'+k, v||0, m); });
+      // Sub-scores — Table A
+      const tA = [
+        ['trunk', d.trunk, 5],
+        ['trunk-mod', d.trunk_mod, 1],
+        ['neck', d.neck, 3],
+        ['neck-mod', d.neck_mod, 1],
+        ['legs', d.legs, 2],
+        ['knee-mod', d.knee_mod, 2],
+      ];
+      tA.forEach(([k, v, m]) => { setText('sc-' + k, v ?? '--'); setBar('bar-' + k, v || 0, m); });
 
-  // Sub-scores — Table B
-  const tB = [
-    ['upper-arm',     d.upper_arm,     6],
-    ['shoulder-mod',  d.shoulder_mod,  1],
-    ['lower-arm',     d.lower_arm,     2],
-    ['wrist',         d.wrist,         3],
-    ['wrist-twist',   d.wrist_twist,   1],
-    ['coupling',      d.coupling,      3],
-  ];
-  tB.forEach(([k,v,m])=>{ setText('sc-'+k, v??'--'); setBar('bar-'+k, v||0, m); });
+      // Sub-scores — Table B
+      const tB = [
+        ['upper-arm', d.upper_arm, 6],
+        ['shoulder-mod', d.shoulder_mod, 1],
+        ['lower-arm', d.lower_arm, 2],
+        ['wrist', d.wrist, 3],
+        ['wrist-twist', d.wrist_twist, 1],
+        ['coupling', d.coupling, 3],
+      ];
+      tB.forEach(([k, v, m]) => { setText('sc-' + k, v ?? '--'); setBar('bar-' + k, v || 0, m); });
 
-  // REBA history chart
-  rebaHistChart.data.labels.push(ts());
-  rebaHistChart.data.datasets[0].data.push(reba);
-  rebaHistChart.data.datasets[1].data.push(d.table_a || 0);
-  rebaHistChart.data.datasets[2].data.push(d.table_b || 0);
-  if (rebaHistChart.data.labels.length > MAX) {
-    rebaHistChart.data.labels.shift();
-    rebaHistChart.data.datasets.forEach(ds => ds.data.shift());
-  }
-  rebaHistChart.update('none');
+      // REBA history chart
+      rebaHistChart.data.labels.push(ts());
+      rebaHistChart.data.datasets[0].data.push(reba);
+      rebaHistChart.data.datasets[1].data.push(d.table_a || 0);
+      rebaHistChart.data.datasets[2].data.push(d.table_b || 0);
+      if (rebaHistChart.data.labels.length > MAX) {
+        rebaHistChart.data.labels.shift();
+        rebaHistChart.data.datasets.forEach(ds => ds.data.shift());
+      }
+      rebaHistChart.update('none');
 
-  // Per-body-part mini charts
-  push(cTrunk,   +(a.trunk||0));
-  push(cNeck,    +(a.neck||0));
-  push(cArm,     +(a.upper_arm_left||0));
-  push(cKnee,    +(a.knee_left || a.knee || 0));
-  push(cForearm, +(a.lower_arm_left || a.forearm || 0));
-  push(cWrist,   +(a.wrist_left || a.wrist || 0));
-});
+      // Per-body-part mini charts
+      push(cTrunk, +(a.trunk || 0));
+      push(cNeck, +(a.neck || 0));
+      push(cArm, +(a.upper_arm_left || 0));
+      push(cKnee, +(a.knee_left || a.knee || 0));
+      push(cForearm, +(a.lower_arm_left || a.forearm || 0));
+      push(cWrist, +(a.wrist_left || a.wrist || 0));
+    });
 
-// Theme
-const btn = document.getElementById('themeBtn');
-function applyTheme(d){ document.body.classList.toggle('dark',d); btn.textContent=d?'☀️':'🌙'; localStorage.setItem('ergo-theme',d?'dark':'light'); }
-btn.addEventListener('click',()=>applyTheme(!document.body.classList.contains('dark')));
-applyTheme(localStorage.getItem('ergo-theme')==='dark');
-</script>
+    // Theme
+    const btn = document.getElementById('themeBtn');
+    function applyTheme(isLight) {
+      document.body.classList.toggle('light-mode', isLight);
+      btn.innerHTML = isLight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('ergo-theme', isLight ? 'light' : 'dark');
+    }
+    btn.addEventListener('click', () => applyTheme(!document.body.classList.contains('light-mode')));
+    applyTheme(localStorage.getItem('ergo-theme') === 'light');
+  </script>
 </body>
+
 </html>

@@ -1,0 +1,442 @@
+Guide pour calculer le score REBA 
+ 
+La méthode REBA (Rapid Entire Body Assessment) est une technique d’évaluation 
+ergonomique qui permet d’analyser rapidement les postures de travail et d’identifier les risques 
+de troubles musculosquelettiques (TMS) affectant l’ensemble du corps. Contrairement à 
+certaines méthodes centrées sur le haut du corps, REBA prend en compte à la fois le haut du 
+corps (bras, avant-bras, poignets) et le bas du corps (tronc, cou, jambes, fesses, genoux et 
+chevilles). Elle évalue les angles articulaires, la charge ou l’effort appliqué, ainsi que la stabilité 
+et la répétition des postures. Le résultat est un score de 1 à 15, qui permet de classer le niveau 
+de risque et de déterminer l’urgence des interventions ergonomiques nécessaires pour réduire 
+les contraintes physiques et prévenir les TMS. 
+La méthode REBA se divise en deux groupes : 
+• 
+Groupe A : tronc, cou, jambes (bas du corps) 
+• 
+Groupe B : bras, avant-bras, poignets (haut du corps) 
+ 
+I. 
+Groupe A – Tronc, Cou et Jambes 
+1. Tronc (dos et bassin/fesses) 
+Tableau 1: Tableau du Position du tronc 
+Position du tronc 
+Score 
+Tronc droit 
+1 
+Flexion 0–20° 
+2 
+Flexion 20–60° 
+3 
+Flexion >60° 
+4 
+Extension 
+2 
+Facteurs supplémentaires : 
+• 
+Rotation → +1 
+• 
+Inclinaison latérale → +1 
+ 
+ 
+
+
+2.  Cou 
+Position du cou 
+Score 
+0–20° flexion 
+1 
+>20° flexion 
+2 
+Extension 
+2 
+Facteurs supplémentaires : 
+• 
+Rotation → +1 
+• 
+Inclinaison latérale → +1 
+3. Jambes (genoux, chevilles, appui des pieds) 
+Position des jambes 
+Score 
+Assis ou debout stable 
+1 
+Un genou fléchi / poids mal réparti 
+2 
+Accroupi / genoux fortement fléchis 
+3 
+Posture très instable ou en mouvement 
+4 
+Ces éléments incluent indirectement les fesses, genoux, chevilles et appui des pieds. 
+Combinaison des scores du Groupe A 
+1. Combiner tronc et cou dans le tableau A → score intermédiaire 
+Tableau A – Combinaison Tronc × Cou (Groupe A) 
+Cou\Tronc 
+1 
+2 
+3 
+4 
+1 
+1 
+2 
+3 
+ 
+2 
+2 
+2 
+3 
+4 
+3 
+3 
+3 
+4 
+5 
+4 
+4 
+4 
+5 
+6 
+5 
+5 
+5 
+6 
+7 
+6 
+6 
+6 
+7 
+8 
+ 
+2. Ajouter le score des jambes → score final du Groupe A 
+ 
+ 
+
+
+II. 
+Groupe B – Bras, Avant-bras et Poignet 
+1. Bras supérieur 
+Position 
+Score 
+Bras le long du corps 
+1 
+20–45° 
+2 
+45–90° 
+3 
+>90° 
+4 
+Facteurs supplémentaires : 
+• 
+Bras soutenu → +1 
+• 
+Charge ou effort → +1 
+2. Avant – bras 
+Angle du coude  
+Score 
+60–100° 
+1 
+<60° ou >100° 
+2 
+ 
+3. Poignet 
+Position du poignet  
+Score  
+Neutre 
+1 
+Flexion / extension >15° 
+2 
+Déviation latérale → +1 
+Combinaison des scores du Groupe B 
+1.Combiner bras + avant-bras dans le tableau B → score intermédiaire 
+Avant-bras \ Bras 
+1 
+2 
+3 
+4 
+1 
+1 
+2 
+3 
+4 
+2 
+2 
+2 
+3 
+4 
+3 
+3 
+3 
+4 
+5 
+4 
+4 
+4 
+5 
+6 
+2.Ajouter le score du poignet → score final du Groupe B 
+ 
+
+
+III. 
+Ajustement pour charge et activité 
+1. Charge ou force 
+Charge manipulée 
+Score 
+<5 kg 
+0 
+5–10 kg 
+1 
+>10 kg 
+2 
+2. Qualité de la prise 
+Prise  
+Score  
+Bonne  
+0 
+Moyenne 
+1 
+Mauvaise  
+2 
+ 
+3. Activité 
+Mouvement répétitif ou posture prolongée → +1 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+IV. 
+Calcul du score final REBA 
+1. Combiner Score Groupe A et Score Groupe B dans le tableau final 
+REBA 
+ 
+ 
+2. Ajouter charge, prise et activité 
+3. Obtenir le score REBA final (1 à 15) 
+Score 
+Risque 
+Action recommandée 
+1 
+Négligeable 
+Pas d’action 
+2-3 
+Faible 
+Surveiller 
+4-7 
+Moyen 
+Amélioration nécessaire 
+8-10 
+Élevé 
+Intervention rapide 
+S Groupe 
+A \  
+S Groupe 
+B 
+1 
+2 
+3 
+4 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+1 
+1 
+2 
+3 
+4 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+2 
+2 
+2 
+3 
+4 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+3 
+3 
+3 
+4 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+15 
+4 
+4 
+4 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+15 
+15 
+5 
+5 
+5 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+15 
+15 
+15 
+6 
+6 
+6 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+15 
+15 
+15 
+15 
+7 
+7 
+7 
+8 
+9 
+10 
+11 
+12 
+13 
+14 
+15 
+15 
+15 
+15 
+15 
+15 
+
+
+11-15 
+Très élevé  
+Action immédiate 
+ 
+Exemple : Opérateur manipulant un objet sur une table 
+1. Observation de la posture 
+• 
+Tronc : penché en avant à 30° 
+• 
+Cou : fléchi à 20° 
+• 
+Jambes : debout stable, pieds à plat 
+• 
+Bras : levés à 50° 
+• 
+Avant-bras : angle du coude à 90° 
+• 
+Poignet : léger fléchissement à 20° et légère déviation 
+• 
+Charge / effort : manipulation d’un objet de 8 kg 
+• 
+Qualité de prise : bonne 
+• 
+Répétition / posture prolongée : oui, posture maintenue 5 min 
+2. Calcul du Groupe A (Tronc – Cou – Jambes) 
+Tronc : flexion 30° → score = 3 
+Cou : flexion 20° → score = 2 
+Jambes : debout stable → score = 1 
+Combinaison tronc + cou → tableau A (REBA) : 3 (tronc) × 2 (cou) = score intermédiaire 
+= 4 
+Ajouter score jambes (1) → Score Groupe A = 5 
+ 
+3. Calcul du Groupe B (Bras – Avant-bras – Poignet) 
+Bras : 50° → score = 3 
+Avant-bras : 90° → score = 1 
+Poignet : flexion 20° → 2 + légère déviation (+1) → total poignet = 3 
+
+
+Combinaison bras + avant-bras → tableau B (REBA) : 3 × 1 = 3 
+Ajouter poignet (3) → Score Groupe B = 6 
+ 
+4. Combinaison Groupe A + Groupe B (tableau final) 
+• 
+Score A = 5 
+• 
+Score B = 6 
+Dans le tableau final REBA : 5 × 6 → score = 12 
+5.Ajustement pour charge, prise et activité 
+• 
+Charge / effort = 8 kg → score = 1 
+• 
+Prise = bonne → score = 0 
+• 
+Posture prolongée / répétitive = oui → +1 
+Score final REBA = 12 + 1 + 0 + 1 = 14 
+6. Interprétation du score 
+Score REBA 
+Niveau de risque 
+Action recommandée 
+14 
+Très élevé 
+Action immédiate pour corriger la posture ou 
+réduire la charge 
+ 
+➢ Conclusion : le poste de travail présente un risque élevé de TMS, il faut intervenir 
+rapidement (réorganisation, aide mécanique, ajustement de la posture). 
+ 
+
+
