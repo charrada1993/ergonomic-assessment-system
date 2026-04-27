@@ -3,7 +3,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/cont
 
 // ─── Scene Setup ──────────────────────────────────────────────
 const scene = new THREE.Scene();
-scene.background = null; // Transparent — glassmorphic background shows through
+scene.background = null;
 
 const container = document.getElementById('canvas-container') || document.body;
 const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -13,9 +13,10 @@ camera.lookAt(0, 1, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
-// Orbit controls with smooth damping
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
@@ -34,121 +35,137 @@ window.addEventListener('resize', () => {
 // ─── Lighting ─────────────────────────────────────────────────
 const ambientLight = new THREE.AmbientLight(0x404060, 0.8);
 scene.add(ambientLight);
-const dirLight = new THREE.DirectionalLight(0x00d4ff, 1.2);
-dirLight.position.set(2, 4, 2);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+dirLight.position.set(2, 5, 3);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.bias = -0.0005;
 scene.add(dirLight);
-const fillLight = new THREE.DirectionalLight(0x9b59ff, 0.4);
+
+const fillLight = new THREE.DirectionalLight(0x9b59ff, 0.6);
 fillLight.position.set(-2, 1, -2);
 scene.add(fillLight);
 
-// ─── Grid Helper ──────────────────────────────────────────────
-const gridHelper = new THREE.GridHelper(4, 20, 0x1a2040, 0x0d1530);
+// ─── Ground Plane ─────────────────────────────────────────────
+const floorGeometry = new THREE.PlaneGeometry(8, 8);
+const floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x0a0f25,
+    roughness: 0.1,
+    metalness: 0.6,
+    transparent: true,
+    opacity: 0.8
+});
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -0.1;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const gridHelper = new THREE.GridHelper(8, 40, 0x1a2040, 0x0d1530);
+gridHelper.position.y = -0.09;
 scene.add(gridHelper);
 
-// ─── Skeleton Definition ──────────────────────────────────────
+// ─── Anatomical Procedural Skeleton ───────────────────────────
 const connections = [
-    // Arms
-    [11,13], [13,15],
-    [12,14], [14,16],
-    // Torso
-    [11,12], [11,23], [12,24], [23,24],
-    // Legs
-    [23,25], [25,27], [24,26], [26,28],
-    // Neck (head to shoulders midpoint approximation)
-    [0,11], [0,12],
+    [11,13], [13,15], // Left Arm
+    [12,14], [14,16], // Right Arm
+    [11,12], [11,23], [12,24], [23,24], // Torso
+    [23,25], [25,27], // Left Leg
+    [24,26], [26,28], // Right Leg
+    [0,11], [0,12], // Neck to shoulders
 ];
 
-// Joint colour groups
-const JOINT_COLORS = {
-    head: 0x00d4ff,
-    upper: 0x00e5a0,
-    lower: 0xffc94d,
-    hip:   0x9b59ff,
-    leg:   0xff7c3e,
-};
-function getJointColor(idx) {
-    if (idx === 0) return JOINT_COLORS.head;
-    if (idx <= 10) return JOINT_COLORS.head;
-    if (idx <= 16) return JOINT_COLORS.upper;
-    if (idx <= 22) return JOINT_COLORS.lower;
-    if (idx <= 24) return JOINT_COLORS.hip;
-    return JOINT_COLORS.leg;
-}
-function getBoneColor(a, b) {
-    if (a <= 1 || b <= 1) return 0x00d4ff;
-    if (a <= 16 && b <= 16) return 0x00e5a0;
-    if (a >= 23 || b >= 23) return 0xff7c3e;
-    return 0xffc94d;
-}
+const joints = [];
+const targetSpheres = [];
+const bones = [];
 
-const spheres = [];
-const lines = [];
+// Shared anatomical bone material (bone white)
+const boneMat = new THREE.MeshStandardMaterial({ 
+    color: 0xe0e5ec, 
+    roughness: 0.7, 
+    metalness: 0.1 
+});
+// Shared joint material (slightly darker/bluish cartilage)
+const jointMat = new THREE.MeshStandardMaterial({ 
+    color: 0x8ba4b5, 
+    roughness: 0.4, 
+    metalness: 0.2 
+});
 
-function createSkeleton() {
+// Tapered bone geometry (thicker at top, thinner at bottom)
+const boneGeometry = new THREE.CylinderGeometry(0.02, 0.012, 1, 12);
+boneGeometry.translate(0, 0.5, 0);
+boneGeometry.rotateX(Math.PI / 2);
+
+function createAnatomicalSkeleton() {
     for (let i = 0; i < 33; i++) {
-        const sphere = new THREE.Mesh(
-            new THREE.SphereGeometry(0.025, 12, 12),
-            new THREE.MeshStandardMaterial({
-                color: getJointColor(i),
-                emissive: getJointColor(i),
-                emissiveIntensity: 0.3,
-                roughness: 0.3,
-                metalness: 0.5,
-            })
-        );
-        sphere.visible = false;
-        scene.add(sphere);
-        spheres.push(sphere);
+        let geo;
+        if (i === 0) {
+            // Skull: an ellipsoid
+            geo = new THREE.SphereGeometry(0.08, 24, 24);
+            geo.scale(1, 1.3, 1.1); // Make it skull shaped
+        } else {
+            // Normal joints
+            geo = new THREE.SphereGeometry(0.025, 16, 16);
+        }
+
+        const mesh = new THREE.Mesh(geo, i === 0 ? boneMat : jointMat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.visible = false;
+        scene.add(mesh);
+        joints.push(mesh);
+        targetSpheres.push(new THREE.Vector3());
     }
+
     for (let i = 0; i < connections.length; i++) {
-        const [a, b] = connections[i];
-        const mat = new THREE.LineBasicMaterial({
-            color: getBoneColor(a, b),
-            linewidth: 2,
-        });
-        const geo = new THREE.BufferGeometry();
-        const line = new THREE.Line(geo, mat);
-        line.visible = false;
-        scene.add(line);
-        lines.push(line);
+        // Use a thicker geometry for the torso to simulate ribcage mass
+        const isTorso = (i >= 4 && i <= 7);
+        let geo = boneGeometry;
+        if (isTorso) {
+            geo = new THREE.CylinderGeometry(0.03, 0.03, 1, 12);
+            geo.translate(0, 0.5, 0);
+            geo.rotateX(Math.PI / 2);
+        }
+
+        const cylinder = new THREE.Mesh(geo, boneMat);
+        cylinder.castShadow = true;
+        cylinder.receiveShadow = true;
+        cylinder.visible = false;
+        scene.add(cylinder);
+        bones.push(cylinder);
     }
 }
+createAnatomicalSkeleton();
 
+// ─── Update Logic ─────────────────────────────────────────────
 function updateSkeleton(landmarks) {
     if (!landmarks) return;
+    
+    // Update target positions
     for (let i = 0; i < 33; i++) {
-        if (landmarks[i] && spheres[i]) {
-            spheres[i].position.set(
+        if (landmarks[i] && targetSpheres[i]) {
+            targetSpheres[i].set(
                 (landmarks[i][0] - 0.5) * 2,
                 (-landmarks[i][1] + 1) * 2,
                 landmarks[i][2] * 2
             );
-            spheres[i].visible = true;
-        }
-    }
-    for (let i = 0; i < connections.length; i++) {
-        const [a, b] = connections[i];
-        if (landmarks[a] && landmarks[b]) {
-            const pts = [
-                new THREE.Vector3((landmarks[a][0]-0.5)*2, (-landmarks[a][1]+1)*2, landmarks[a][2]*2),
-                new THREE.Vector3((landmarks[b][0]-0.5)*2, (-landmarks[b][1]+1)*2, landmarks[b][2]*2),
-            ];
-            const geo = new THREE.BufferGeometry().setFromPoints(pts);
-            lines[i].geometry.dispose();
-            lines[i].geometry = geo;
-            lines[i].visible = true;
+            if (!joints[i].visible) {
+                joints[i].position.copy(targetSpheres[i]);
+                joints[i].visible = true;
+            }
         }
     }
 }
 
-// ─── UI Helpers ───────────────────────────────────────────────
+// ─── UI Helpers & Socket.IO ───────────────────────────────────
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 let fpsCount = 0;
 setInterval(() => { setText('viewer-fps', fpsCount); fpsCount = 0; }, 1000);
 
-// ─── Socket.IO ────────────────────────────────────────────────
 const socket = io();
-
 socket.on('skeleton_3d', (data) => {
     if (data.landmarks) {
         updateSkeleton(data.landmarks);
@@ -159,17 +176,35 @@ socket.on('skeleton_3d', (data) => {
     }
 });
 
-socket.on('config', (cfg) => {
-    const modeMap = { 1: 'Single-view', 2: 'Dual-view', 3: 'Multi-view 3D' };
-    setText('viewer-cam-mode', modeMap[cfg.mode] || 'Unknown');
-});
-
 // ─── Animate ──────────────────────────────────────────────────
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
+
+    const lerpFactor = 0.3;
+    
+    // Animate joints
+    for (let i = 0; i < 33; i++) {
+        if (joints[i].visible) {
+            joints[i].position.lerp(targetSpheres[i], lerpFactor);
+        }
+    }
+    
+    // Animate bones
+    for (let i = 0; i < connections.length; i++) {
+        const [a, b] = connections[i];
+        if (joints[a].visible && joints[b].visible) {
+            const start = joints[a].position;
+            const end = joints[b].position;
+            const distance = start.distanceTo(end);
+            bones[i].position.copy(start);
+            bones[i].lookAt(end);
+            bones[i].scale.set(1, 1, distance);
+            bones[i].visible = true;
+        }
+    }
+
     renderer.render(scene, camera);
 }
 
-createSkeleton();
 animate();
