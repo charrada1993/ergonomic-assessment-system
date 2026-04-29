@@ -63,23 +63,36 @@ scene.add(gridHelper);
 // ─── GLTF Model ───────────────────────────────────────────────
 let model = null;
 const bones = {};
+const restLocalQuats = {};
+const localDirs = {};
 const targetPositions = Array.from({ length: 33 }, () => new THREE.Vector3());
 let lastLandmarks = null;
 
 // ─── Bone Rotation Helper ─────────────────────────────────────
-const _q = new THREE.Quaternion();
-const _up = new THREE.Vector3(0, 1, 0);
 const _v1 = new THREE.Vector3();
 
-function rotateBoneToward(bone, fromPos, toPos) {
+function rotateBoneToward(boneName, fromPos, toPos) {
+    let bone = bones[boneName];
     if (!bone || !fromPos || !toPos) return;
+    
+    let localDir = localDirs[boneName] || new THREE.Vector3(0, 1, 0);
+    let restQuat = restLocalQuats[boneName] || new THREE.Quaternion();
+    
     _v1.subVectors(toPos, fromPos);
     if (_v1.length() < 0.001) return;
     _v1.normalize();
-    _q.setFromUnitVectors(_up, _v1);
+    
     const parentWorldQuat = new THREE.Quaternion();
     if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQuat);
-    bone.quaternion.copy(parentWorldQuat.clone().invert().multiply(_q));
+    
+    let targetLocalDir = _v1.clone().applyQuaternion(parentWorldQuat.invert());
+    
+    bone.quaternion.copy(restQuat);
+    let currentParentDir = localDir.clone().applyQuaternion(bone.quaternion);
+    
+    let qRotate = new THREE.Quaternion().setFromUnitVectors(currentParentDir, targetLocalDir);
+    bone.quaternion.premultiply(qRotate);
+    bone.updateMatrixWorld(true);
 }
 
 // ─── Load the Rigged Model ────────────────────────────────────
@@ -88,8 +101,9 @@ loader.load('/static/models/xbot.glb', (gltf) => {
     model = gltf.scene;
 
     // Mixamo/FBX models export in centimetres. Scale to metres.
-    // Xbot is ~170 cm tall → at scale 0.01 → 1.7 m — perfect human height.
-    const SCALE = 0.01;
+    // Mixamo/FBX models export in centimetres. Scale to metres.
+    // Xbot is ~170 cm tall → if it's already in meters, scale 1.0 is perfect.
+    const SCALE = 1.0;
     model.scale.set(SCALE, SCALE, SCALE);
 
     // IMPORTANT: must updateMatrixWorld after scaling before computing bbox
@@ -106,8 +120,34 @@ loader.load('/static/models/xbot.glb', (gltf) => {
         }
         if (child.isBone || child.type === 'Bone') {
             bones[child.name] = child;
+            restLocalQuats[child.name] = child.quaternion.clone();
         }
     });
+
+    // Compute local directions for bones based on their children
+    const pairs = {
+        'mixamorig:Spine': 'mixamorig:Spine1',
+        'mixamorig:Spine1': 'mixamorig:Spine2',
+        'mixamorig:Spine2': 'mixamorig:Neck',
+        'mixamorig:Neck': 'mixamorig:Head',
+        'mixamorig:LeftArm': 'mixamorig:LeftForeArm',
+        'mixamorig:LeftForeArm': 'mixamorig:LeftHand',
+        'mixamorig:RightArm': 'mixamorig:RightForeArm',
+        'mixamorig:RightForeArm': 'mixamorig:RightHand',
+        'mixamorig:LeftUpLeg': 'mixamorig:LeftLeg',
+        'mixamorig:LeftLeg': 'mixamorig:LeftFoot',
+        'mixamorig:RightUpLeg': 'mixamorig:RightLeg',
+        'mixamorig:RightLeg': 'mixamorig:RightFoot'
+    };
+    for (let boneName in pairs) {
+        let childName = pairs[boneName];
+        if (bones[boneName] && bones[childName]) {
+            let child = bones[childName];
+            if (child.position.length() > 0.001) {
+                localDirs[boneName] = child.position.clone().normalize();
+            }
+        }
+    }
 
     scene.add(model);
 
@@ -119,7 +159,9 @@ loader.load('/static/models/xbot.glb', (gltf) => {
     console.log('Xbot loaded. Bones:', Object.keys(bones).length);
 
     const statusEl = document.getElementById('viewer3dStatus');
-    if (statusEl) statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--cyan);font-size:0.5rem"></i> 3D model ready — waiting for pose';
+    if (statusEl) {
+        statusEl.innerHTML = '<i class="fas fa-circle" style="color:var(--cyan);font-size:0.5rem"></i> 3D model ready — Bones: ' + Object.keys(bones).slice(0, 5).join(', ');
+    }
 
 }, (xhr) => {
     const pct = xhr.total ? Math.round((xhr.loaded / xhr.total) * 100) : '...';
@@ -141,33 +183,32 @@ function applyPoseToBones() {
     const hipMid = lp(23).clone().add(lp(24)).multiplyScalar(0.5);
     const shoulderMid = lp(11).clone().add(lp(12)).multiplyScalar(0.5);
 
-    rotateBoneToward(bones['mixamorig:Spine'],    hipMid, shoulderMid);
-    rotateBoneToward(bones['mixamorig:Spine1'],   hipMid, shoulderMid);
-    rotateBoneToward(bones['mixamorig:Spine2'],   hipMid, shoulderMid);
-    rotateBoneToward(bones['mixamorig:Neck'],     shoulderMid, lp(0));
-    rotateBoneToward(bones['mixamorig:LeftArm'],     lp(11), lp(13));
-    rotateBoneToward(bones['mixamorig:LeftForeArm'], lp(13), lp(15));
-    rotateBoneToward(bones['mixamorig:RightArm'],     lp(12), lp(14));
-    rotateBoneToward(bones['mixamorig:RightForeArm'], lp(14), lp(16));
-    rotateBoneToward(bones['mixamorig:LeftUpLeg'],  lp(23), lp(25));
-    rotateBoneToward(bones['mixamorig:LeftLeg'],    lp(25), lp(27));
-    rotateBoneToward(bones['mixamorig:RightUpLeg'], lp(24), lp(26));
-    rotateBoneToward(bones['mixamorig:RightLeg'],   lp(26), lp(28));
+    // Move model root to match hips
+    if (bones['mixamorig:Hips']) {
+        let rootYOffset = 1.0; // approx height of hips
+        model.position.x = hipMid.x;
+        model.position.z = hipMid.z;
+        // Optional: model.position.y = hipMid.y - rootYOffset;
+    }
+
+    rotateBoneToward('mixamorig:Spine',    hipMid, shoulderMid);
+    rotateBoneToward('mixamorig:Spine1',   hipMid, shoulderMid);
+    rotateBoneToward('mixamorig:Spine2',   hipMid, shoulderMid);
+    rotateBoneToward('mixamorig:Neck',     shoulderMid, lp(0));
+    rotateBoneToward('mixamorig:LeftArm',     lp(11), lp(13));
+    rotateBoneToward('mixamorig:LeftForeArm', lp(13), lp(15));
+    rotateBoneToward('mixamorig:RightArm',     lp(12), lp(14));
+    rotateBoneToward('mixamorig:RightForeArm', lp(14), lp(16));
+    rotateBoneToward('mixamorig:LeftUpLeg',  lp(23), lp(25));
+    rotateBoneToward('mixamorig:LeftLeg',    lp(25), lp(27));
+    rotateBoneToward('mixamorig:RightUpLeg', lp(24), lp(26));
+    rotateBoneToward('mixamorig:RightLeg',   lp(26), lp(28));
 }
 
 // ─── Update Skeleton (called on socket event) ─────────────────
 function updateSkeleton(landmarks) {
     if (!landmarks) return;
     lastLandmarks = landmarks;
-    for (let i = 0; i < 33; i++) {
-        if (landmarks[i]) {
-            targetPositions[i].set(
-                (landmarks[i][0] - 0.5) * 2,
-                (-landmarks[i][1] + 1) * 2,
-                landmarks[i][2] * 2
-            );
-        }
-    }
 }
 
 // ─── UI & Socket.IO ───────────────────────────────────────────
