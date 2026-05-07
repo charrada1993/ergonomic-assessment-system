@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 
 # Resolution for stereo cameras - 720P gives best depth quality/performance balance
-MONO_RESOLUTION = dai.MonoCameraProperties.SensorResolution.THE_720_P
+MONO_RESOLUTION = dai.MonoCameraProperties.SensorResolution.THE_400_P
 RGB_SOCKET      = dai.CameraBoardSocket.CAM_A
 FPS             = 30
 
@@ -45,9 +45,10 @@ class CameraManager:
             return False
 
         # ── RGB camera ──────────────────────────────────────────────────
-        cam_rgb = self.pipeline.create(dai.node.Camera)
+        cam_rgb = self.pipeline.create(dai.node.ColorCamera)
         cam_rgb.setBoardSocket(RGB_SOCKET)
-        cam_rgb.setSize(1280, 720)
+        cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+        cam_rgb.setIspScale(2, 3)
         cam_rgb.setFps(FPS)
 
         # ── Mono cameras ────────────────────────────────────────────────
